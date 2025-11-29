@@ -144,12 +144,60 @@ Deno.serve(async (req: Request) => {
   }
 });
 
+// Вспомогательная функция для получения данных пользователя
+async function getUserData(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<{ locale: string; madhab: string; tz: string }> {
+  const { data: user, error } = await supabase
+    .from("users")
+    .select("locale, madhab, tz")
+    .eq("id", userId)
+    .single();
+
+  if (error || !user) {
+    // Fallback на дефолтные значения
+    return {
+      locale: "ru",
+      madhab: "hanafi",
+      tz: "UTC",
+    };
+  }
+
+  return {
+    locale: user.locale || "ru",
+    madhab: user.madhab || "hanafi",
+    tz: user.tz || "UTC",
+  };
+}
+
+// Вспомогательная функция для получения локальной даты в часовом поясе пользователя
+function getLocalDate(tz: string): string {
+  try {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    return formatter.format(now);
+  } catch (error) {
+    console.error(`Error formatting date for timezone ${tz}:`, error);
+    // Fallback на UTC
+    return new Date().toISOString().split("T")[0];
+  }
+}
+
 // Bootstrap - получение состояния для инициализации
 async function handleBootstrap(supabase: SupabaseClient, userId: string) {
   try {
+    // Получаем данные пользователя
+    const userData = await getUserData(supabase, userId);
+
     // Получаем активную цель
     const { data: activeGoal } = await supabase
-      .from("tasbih_goals")
+      .from("goals")
       .select("*")
       .eq("user_id", userId)
       .eq("status", "active")
@@ -157,13 +205,13 @@ async function handleBootstrap(supabase: SupabaseClient, userId: string) {
       .limit(1)
       .single();
 
-    // Получаем ежедневные азкары
-    const today = new Date().toISOString().split("T")[0];
+    // Получаем ежедневные азкары (используем локальную дату пользователя)
+    const localDate = getLocalDate(userData.tz);
     const { data: dailyAzkar } = await supabase
       .from("daily_azkar")
       .select("*")
       .eq("user_id", userId)
-      .eq("date_local", today)
+      .eq("date_local", localDate)
       .single();
 
     // Если нет записи, создаем
@@ -173,7 +221,7 @@ async function handleBootstrap(supabase: SupabaseClient, userId: string) {
         .from("daily_azkar")
         .insert({
           user_id: userId,
-          date_local: today,
+          date_local: localDate,
           fajr: 0,
           dhuhr: 0,
           asr: 0,
@@ -194,9 +242,9 @@ async function handleBootstrap(supabase: SupabaseClient, userId: string) {
       JSON.stringify({
         user: {
           id: userId,
-          locale: "ru",
-          madhab: "hanafi",
-          tz: "Europe/Moscow",
+          locale: userData.locale,
+          madhab: userData.madhab,
+          tz: userData.tz,
         },
         active_goal: activeGoal || null,
         daily_azkar: azkar || null,
@@ -221,7 +269,7 @@ async function handleCreateOrUpdateGoal(body: GoalBody, supabase: SupabaseClient
     let existingGoal = null;
     if (prayer_segment && prayer_segment !== "none") {
       const { data } = await supabase
-        .from("tasbih_goals")
+        .from("goals")
         .select("*")
         .eq("user_id", userId)
         .eq("category", category)
@@ -235,10 +283,9 @@ async function handleCreateOrUpdateGoal(body: GoalBody, supabase: SupabaseClient
     if (existingGoal) {
       // Обновляем существующую цель
       const { data } = await supabase
-        .from("tasbih_goals")
+        .from("goals")
         .update({
           target_count,
-          updated_at: new Date().toISOString(),
         })
         .eq("id", existingGoal.id)
         .select()
@@ -247,7 +294,7 @@ async function handleCreateOrUpdateGoal(body: GoalBody, supabase: SupabaseClient
     } else {
       // Создаем новую цель
       const { data } = await supabase
-        .from("tasbih_goals")
+        .from("goals")
         .insert({
           user_id: userId,
           category,
@@ -282,14 +329,14 @@ async function handleStartSession(body: SessionBody, supabase: SupabaseClient, u
 
     // Завершаем предыдущую активную сессию, если есть
     await supabase
-      .from("tasbih_sessions")
+      .from("sessions")
       .update({ ended_at: new Date().toISOString() })
       .eq("user_id", userId)
       .is("ended_at", null);
 
     // Создаем новую сессию
     const { data: session } = await supabase
-      .from("tasbih_sessions")
+      .from("sessions")
       .insert({
         user_id: userId,
         goal_id: goal_id || null,
@@ -311,14 +358,60 @@ async function handleStartSession(body: SessionBody, supabase: SupabaseClient, u
   }
 }
 
+// Анти-чит проверка: определяет аномальную активность
+async function checkAnomalousActivity(
+  supabase: SupabaseClient,
+  userId: string,
+  delta: number
+): Promise<boolean> {
+  try {
+    // Проверяем количество тапов за последнюю секунду
+    const oneSecondAgo = new Date(Date.now() - 1000).toISOString();
+    const { data: recentTaps, error } = await supabase
+      .from("dhikr_log")
+      .select("delta")
+      .eq("user_id", userId)
+      .eq("event_type", "tap")
+      .gte("at_ts", oneSecondAgo);
+
+    if (error) {
+      console.error("Error checking anomalous activity:", error);
+      return false;
+    }
+
+    // Подсчитываем общее количество тапов за последнюю секунду
+    const totalTapsInSecond = (recentTaps || []).reduce(
+      (sum, log) => sum + Math.abs(log.delta || 0),
+      0
+    ) + Math.abs(delta);
+
+    // Если больше 100 тапов в секунду - подозрительно
+    const isSuspected = totalTapsInSecond > 100;
+
+    if (isSuspected) {
+      console.warn(
+        `Suspected anomalous activity for user ${userId}: ${totalTapsInSecond} taps in 1 second`
+      );
+    }
+
+    return isSuspected;
+  } catch (error) {
+    console.error("Error in checkAnomalousActivity:", error);
+    return false;
+  }
+}
+
 // Фиксация действия (tap)
 async function handleCounterTap(body: CounterTapBody, supabase: SupabaseClient, userId: string) {
   try {
     const { session_id, delta, event_type, offline_id, prayer_segment } = body;
 
+    // Получаем данные пользователя (включая tz)
+    const userData = await getUserData(supabase, userId);
+
     // Получаем сессию
     const { data: session } = await supabase
-      .from("tasbih_sessions")
+      .from("sessions")
       .select("*")
       .eq("id", session_id)
       .single();
@@ -327,11 +420,16 @@ async function handleCounterTap(body: CounterTapBody, supabase: SupabaseClient, 
       throw new Error("Session not found");
     }
 
+    // Анти-чит проверка (только для онлайн-событий, не для офлайн-синхронизации)
+    const isSuspected = offline_id
+      ? false // Офлайн-события не проверяем на аномальность
+      : await checkAnomalousActivity(supabase, userId, delta);
+
     // Получаем цель, если есть
     let goal = null;
     if (session.goal_id) {
       const { data } = await supabase
-        .from("tasbih_goals")
+        .from("goals")
         .select("*")
         .eq("id", session.goal_id)
         .single();
@@ -346,25 +444,24 @@ async function handleCounterTap(body: CounterTapBody, supabase: SupabaseClient, 
       isCompleted = newProgress >= goal.target_count;
 
       await supabase
-        .from("tasbih_goals")
+        .from("goals")
         .update({
           progress: newProgress,
           status: isCompleted ? "completed" : "active",
           completed_at: isCompleted ? new Date().toISOString() : null,
-          updated_at: new Date().toISOString(),
         })
         .eq("id", goal.id);
     }
 
-    // Обновляем daily_azkar, если это азкары
+    // Обновляем daily_azkar, если это азкары (используем локальную дату)
     let dailyAzkar = null;
     if (prayer_segment && prayer_segment !== "none") {
-      const today = new Date().toISOString().split("T")[0];
+      const localDate = getLocalDate(userData.tz);
       const { data: azkar } = await supabase
         .from("daily_azkar")
         .select("*")
         .eq("user_id", userId)
-        .eq("date_local", today)
+        .eq("date_local", localDate)
         .single();
 
       if (azkar) {
@@ -379,7 +476,7 @@ async function handleCounterTap(body: CounterTapBody, supabase: SupabaseClient, 
             updated_at: new Date().toISOString(),
           })
           .eq("user_id", userId)
-          .eq("date_local", today)
+          .eq("date_local", localDate)
           .select()
           .single();
         dailyAzkar = updated;
@@ -399,9 +496,9 @@ async function handleCounterTap(body: CounterTapBody, supabase: SupabaseClient, 
       value_after: valueAfter,
       prayer_segment: prayer_segment || "none",
       at_ts: new Date().toISOString(),
-      tz: "Europe/Moscow", // TODO: получать из users.tz
+      tz: userData.tz,
       offline_id: offline_id || null,
-      suspected: false, // TODO: проверка на аномальную активность
+      suspected: isSuspected,
     });
 
     return new Response(
@@ -413,6 +510,7 @@ async function handleCounterTap(body: CounterTapBody, supabase: SupabaseClient, 
           is_completed: isCompleted,
         } : null,
         daily_azkar,
+        suspected: isSuspected,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -430,11 +528,10 @@ async function handleMarkLearned(body: MarkLearnedBody, supabase: SupabaseClient
     const { goal_id } = body;
 
     const { data: goal } = await supabase
-      .from("tasbih_goals")
+      .from("goals")
       .update({
         status: "completed",
         completed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
       })
       .eq("id", goal_id)
       .eq("user_id", userId)
@@ -470,8 +567,12 @@ async function handleMarkLearned(body: MarkLearnedBody, supabase: SupabaseClient
 // Ежедневный отчет
 async function handleDailyReport(req: Request, supabase: SupabaseClient, userId: string) {
   try {
+    // Получаем данные пользователя (включая tz)
+    const userData = await getUserData(supabase, userId);
+
     const url = new URL(req.url);
-    const date = url.searchParams.get("date") || new Date().toISOString().split("T")[0];
+    // Если дата не указана, используем локальную дату пользователя
+    const date = url.searchParams.get("date") || getLocalDate(userData.tz);
 
     // Получаем daily_azkar
     const { data: dailyAzkar } = await supabase
@@ -481,22 +582,26 @@ async function handleDailyReport(req: Request, supabase: SupabaseClient, userId:
       .eq("date_local", date)
       .single();
 
-    // Получаем завершенные цели за день
+    // Получаем завершенные цели за день (используем UTC для сравнения timestamps)
+    const dateStart = new Date(`${date}T00:00:00`);
+    const dateEnd = new Date(`${date}T23:59:59`);
+    
+    // Конвертируем в UTC с учетом часового пояса пользователя
     const { data: completedGoals } = await supabase
-      .from("tasbih_goals")
+      .from("goals")
       .select("*")
       .eq("user_id", userId)
       .eq("status", "completed")
-      .gte("completed_at", `${date}T00:00:00`)
-      .lte("completed_at", `${date}T23:59:59`);
+      .gte("completed_at", dateStart.toISOString())
+      .lte("completed_at", dateEnd.toISOString());
 
     // Подсчитываем общее количество зикров за день
     const { data: logs } = await supabase
       .from("dhikr_log")
       .select("delta")
       .eq("user_id", userId)
-      .gte("at_ts", `${date}T00:00:00`)
-      .lte("at_ts", `${date}T23:59:59`)
+      .gte("at_ts", dateStart.toISOString())
+      .lte("at_ts", dateEnd.toISOString())
       .eq("event_type", "tap");
 
     const totalDhikrCount = logs?.reduce((sum, log) => sum + (log.delta || 0), 0) || 0;
@@ -504,6 +609,7 @@ async function handleDailyReport(req: Request, supabase: SupabaseClient, userId:
     return new Response(
       JSON.stringify({
         date,
+        tz: userData.tz,
         goals_completed: completedGoals || [],
         azkar_progress: dailyAzkar || {
           fajr: 0,
