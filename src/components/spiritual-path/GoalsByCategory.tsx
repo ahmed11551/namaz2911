@@ -1,6 +1,6 @@
 // Компонент для отображения целей по категориям (компактный список)
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -52,33 +52,49 @@ export const GoalsByCategory = () => {
   const [pendingTasbih, setPendingTasbih] = useState<PendingTasbihEntry[]>([]);
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout | null = null;
+    let isMounted = true;
+    
     // Сначала загружаем из кэша мгновенно (синхронно)
     try {
       const cachedGoals = spiritualPathAPI.getGoalsFromLocalStorage("all");
-      if (Array.isArray(cachedGoals)) {
+      if (Array.isArray(cachedGoals) && isMounted) {
         setGoals(cachedGoals);
         setLoading(false); // Показываем сразу с кэшем
-      } else {
+      } else if (isMounted) {
         setLoading(false); // Показываем даже если кэш пуст
       }
     } catch (e) {
       console.warn("Error loading cached goals:", e);
-      setLoading(false); // Показываем в любом случае
+      if (isMounted) {
+        setLoading(false); // Показываем в любом случае
+      }
     }
 
     // Затем загружаем свежие данные в фоне (асинхронно)
     loadPendingTasbihEntries();
     // Небольшая задержка для загрузки целей, чтобы UI успел отрендериться
-    setTimeout(() => {
-      loadGoals();
+    timeoutId = setTimeout(() => {
+      if (isMounted) {
+        loadGoals();
+      }
     }, 100);
     
     // Слушаем обновления незавершенных тасбих-сессий
     const handlePendingUpdate = () => {
-      loadPendingTasbihEntries();
+      if (isMounted) {
+        loadPendingTasbihEntries();
+      }
     };
     window.addEventListener("pendingTasbihUpdated", handlePendingUpdate);
-    return () => window.removeEventListener("pendingTasbihUpdated", handlePendingUpdate);
+    
+    return () => {
+      isMounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      window.removeEventListener("pendingTasbihUpdated", handlePendingUpdate);
+    };
   }, []);
 
   // Отслеживание прокрутки для показа кнопки "Наверх"
@@ -150,13 +166,22 @@ export const GoalsByCategory = () => {
   // Проверка лимита целей с учетом тарифа
   const [canAddMoreGoals, setCanAddMoreGoals] = useState(true);
   
+  // Мемоизируем активные цели для предотвращения лишних вызовов
+  const activeGoalsCount = useMemo(() => 
+    goals.filter(g => g.status === "active").length,
+    [goals]
+  );
+  
   useEffect(() => {
+    let isMounted = true;
+    
     const checkGoalLimit = async () => {
       try {
         const { getUserTier } = await import("@/lib/subscription");
         const tier = await getUserTier();
+        if (!isMounted) return;
+        
         if (tier === "muslim") {
-          const activeGoalsCount = goals.filter(g => g.status === "active").length;
           setCanAddMoreGoals(activeGoalsCount < MAX_FREE_GOALS);
         } else {
           // PRO и Premium - неограниченное количество
@@ -165,13 +190,18 @@ export const GoalsByCategory = () => {
       } catch (error) {
         console.error("Error checking goal limit:", error);
         // При ошибке разрешаем создание (лучше разрешить, чем заблокировать)
-        setCanAddMoreGoals(true);
+        if (isMounted) {
+          setCanAddMoreGoals(true);
+        }
       }
     };
     
     checkGoalLimit();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [goals]);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [activeGoalsCount]);
 
   const handleCategoryClick = (categoryId: string) => {
     const categoryGoals = getGoalsByCategory(categoryId);
@@ -291,7 +321,7 @@ export const GoalsByCategory = () => {
   }
 
   // Главный экран - категории
-  const activeGoalsCount = goals.filter(g => g.status === "active").length;
+  // activeGoalsCount уже объявлен выше через useMemo
 
   return (
     <div className="space-y-4 sm:space-y-6">

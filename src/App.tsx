@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { initTelegramWebApp } from "./lib/telegram";
 import { ConsentDialog } from "./components/qaza/ConsentDialog";
 import { Loader2 } from "lucide-react";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 // Lazy loading для всех страниц для быстрой загрузки
 const Index = lazy(() => import("./pages/Index"));
@@ -59,30 +60,34 @@ const App = () => {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <ConsentDialog />
-        <BrowserRouter>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/" element={<OnboardingGuard><Index /></OnboardingGuard>} />
-              <Route path="/goals" element={<Goals />} />
-              <Route path="/dhikr" element={<Dhikr />} />
-              <Route path="/tasbih" element={<Tasbih />} />
-              <Route path="/statistics" element={<Statistics />} />
-              <Route path="/ai-chat" element={<AIChat />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/history" element={<History />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <ConsentDialog />
+          <BrowserRouter>
+            <Suspense fallback={<PageLoader />}>
+              <ErrorBoundary>
+                <Routes>
+                  <Route path="/" element={<OnboardingGuard><Index /></OnboardingGuard>} />
+                  <Route path="/goals" element={<ErrorBoundary><Goals /></ErrorBoundary>} />
+                  <Route path="/dhikr" element={<Dhikr />} />
+                  <Route path="/tasbih" element={<Tasbih />} />
+                  <Route path="/statistics" element={<Statistics />} />
+                  <Route path="/ai-chat" element={<AIChat />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/onboarding" element={<Onboarding />} />
+                  <Route path="/history" element={<History />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </ErrorBoundary>
+            </Suspense>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

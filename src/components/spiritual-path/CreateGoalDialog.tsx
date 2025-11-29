@@ -1,6 +1,6 @@
 // Компонент для создания цели
 
-import { useState, type ReactNode } from "react";
+import { useState, type ReactNode, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,13 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Target, Sparkles, Check } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CalendarIcon, Target, Sparkles, Check, BookOpen } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { spiritualPathAPI } from "@/lib/api";
 import { ItemSelector } from "./ItemSelector";
 import { Checkbox } from "@/components/ui/checkbox";
+import { HabitsCatalog } from "./HabitsCatalog";
 import type { Goal, GoalCategory, GoalType, GoalPeriod, GoalMetric, KnowledgeSubcategory, LinkedCounterType } from "@/types/spiritual-path";
+import type { Habit } from "@/data/habits-catalog";
 import { cn } from "@/lib/utils";
 
 interface CreateGoalDialogProps {
@@ -78,6 +81,7 @@ export const CreateGoalDialog = ({ open, onOpenChange, onGoalCreated, children }
   const setDialogOpen = isControlled ? onOpenChange! : setInternalOpen;
   const [loading, setLoading] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
+  const [activeTab, setActiveTab] = useState<"catalog" | "custom">("catalog");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<GoalCategory | "">("");
@@ -93,6 +97,36 @@ export const CreateGoalDialog = ({ open, onOpenChange, onGoalCreated, children }
   const [selectedItemId, setSelectedItemId] = useState<string>("");
   const [selectedItemType, setSelectedItemType] = useState<Goal["item_type"]>(undefined);
   const [selectedItemData, setSelectedItemData] = useState<Goal["item_data"]>(null);
+
+  // Предзаполнение формы из каталога привычек
+  const handleHabitSelected = (habit: Habit) => {
+    setTitle(habit.title);
+    setDescription(habit.description);
+    setCategory(habit.category as GoalCategory);
+    
+    // Устанавливаем целевое значение и период
+    if (habit.defaultTarget) {
+      setTargetValue(habit.defaultTarget);
+    }
+    if (habit.defaultPeriod === "daily") {
+      setPeriod("infinite");
+      setType("habit");
+    } else if (habit.defaultPeriod === "weekly") {
+      setPeriod("week");
+      setType("recurring");
+    } else if (habit.defaultPeriod === "monthly") {
+      setPeriod("month");
+      setType("recurring");
+    }
+
+    // Устанавливаем связанный тип счетчика, если есть
+    if (habit.linkedCounterType) {
+      setLinkedCounterType(habit.linkedCounterType as LinkedCounterType);
+    }
+
+    // Переключаемся на вкладку создания для настройки
+    setActiveTab("custom");
+  };
 
   // Автоматический расчет end_date на основе period
   const calculateEndDate = (period: GoalPeriod, start: Date): Date | null => {
@@ -325,6 +359,19 @@ export const CreateGoalDialog = ({ open, onOpenChange, onGoalCreated, children }
 
   const dailyPlan = calculateDailyPlan();
 
+  // Сброс формы при закрытии
+  useEffect(() => {
+    if (!dialogOpen) {
+      setTitle("");
+      setDescription("");
+      setCategory("");
+      setActiveTab("catalog");
+      setShowErrors(false);
+    }
+  }, [dialogOpen]);
+
+  const isEditMode = false; // Для будущего редактирования
+
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
@@ -335,10 +382,30 @@ export const CreateGoalDialog = ({ open, onOpenChange, onGoalCreated, children }
             {isEditMode ? "Редактировать цель" : "Создать цель"}
           </DialogTitle>
           <DialogDescription>
-            Установите цель для отслеживания вашего духовного роста
+            Выберите готовую привычку из каталога или создайте свою
           </DialogDescription>
         </DialogHeader>
 
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "catalog" | "custom")} className="mt-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="catalog" className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4" />
+              Каталог
+            </TabsTrigger>
+            <TabsTrigger value="custom" className="flex items-center gap-2">
+              <Target className="w-4 h-4" />
+              Своя цель
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="catalog" className="mt-4">
+            <HabitsCatalog
+              onAddHabit={handleHabitSelected}
+              onCreateCustom={() => setActiveTab("custom")}
+            />
+          </TabsContent>
+
+          <TabsContent value="custom" className="mt-4">
         <div className="space-y-6 py-4">
           {/* Название цели */}
           <div className="space-y-2">
@@ -636,6 +703,8 @@ export const CreateGoalDialog = ({ open, onOpenChange, onGoalCreated, children }
             </Button>
           </div>
         </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

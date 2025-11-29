@@ -279,35 +279,45 @@ const Goals = () => {
   }, []);
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout | null = null;
+    let isMounted = true;
+    
     // Сначала загружаем из кэша мгновенно (синхронно)
     try {
       const cachedGoals = spiritualPathAPI.getGoalsFromLocalStorage("all");
-      if (Array.isArray(cachedGoals)) {
+      if (Array.isArray(cachedGoals) && isMounted) {
         setGoals(cachedGoals);
         setLoading(false); // Показываем страницу сразу с кэшем
-      } else {
+      } else if (isMounted) {
         setLoading(false); // Показываем страницу даже если кэш пуст
       }
     } catch (e) {
       console.warn("Error loading cached goals:", e);
-      setLoading(false); // Показываем страницу в любом случае
+      if (isMounted) {
+        setLoading(false); // Показываем страницу в любом случае
+      }
     }
 
     // Затем загружаем свежие данные в фоне (асинхронно)
-    if (!loadingRef.current) {
+    if (!loadingRef.current && isMounted) {
       // Небольшая задержка, чтобы UI успел отрендериться
-      setTimeout(() => {
-        loadData();
+      timeoutId = setTimeout(() => {
+        if (isMounted && !loadingRef.current) {
+          loadData();
+        }
       }, 100);
     }
     
     return () => {
-      // Cleanup при размонтировании
+      isMounted = false;
       loadingRef.current = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     // Защита от повторных вызовов
     if (loadingRef.current) {
       console.warn("loadData already in progress, skipping");
@@ -317,18 +327,14 @@ const Goals = () => {
     loadingRef.current = true;
     // НЕ устанавливаем loading в true, чтобы не блокировать UI
     
-    // Уменьшенный таймаут для всей загрузки (максимум 2 секунды)
-    const timeoutPromise = new Promise<void>((resolve) => {
-      setTimeout(() => {
-        console.warn("Load data timeout reached");
-        resolve();
-      }, 2000);
-    });
-
+    let timeoutId: NodeJS.Timeout | null = null;
+    const controller = new AbortController();
+    
     try {
-      // Загружаем данные параллельно, но обрабатываем ошибки для каждого отдельно
+      // Загружаем данные параллельно с таймаутом через AbortController
       const loadPromise = Promise.allSettled([
         spiritualPathAPI.getGoals("all").catch((err) => {
+          if (controller.signal.aborted) return [];
           console.error("Error in getGoals:", err);
           // Пытаемся загрузить из localStorage при ошибке
           try {
@@ -339,68 +345,84 @@ const Goals = () => {
           }
         }),
         spiritualPathAPI.getStreaks().catch((err) => {
+          if (controller.signal.aborted) return [];
           console.error("Error in getStreaks:", err);
           return [];
         }),
         spiritualPathAPI.getBadges().catch((err) => {
+          if (controller.signal.aborted) return [];
           console.error("Error in getBadges:", err);
           return [];
         }),
       ]);
 
-      // Ждем либо загрузку, либо таймаут (что наступит раньше)
-      const results = await Promise.race([loadPromise, timeoutPromise.then(() => null)]);
+      // Таймаут 2 секунды
+      timeoutId = setTimeout(() => {
+        controller.abort();
+        console.warn("Load data timeout reached");
+      }, 2000);
 
-      if (results === null) {
-        // Таймаут - используем уже загруженный кэш (не меняем состояние)
-        console.warn("Loading timeout, using cached data");
-        setStreaks([]);
-        setBadges([]);
-        // Не показываем toast - данные уже есть из кэша
+      const results = await loadPromise;
+
+      // Очищаем таймаут
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+
+      // Если запрос был отменен, не обновляем состояние
+      if (controller.signal.aborted) {
+        return;
+      }
+
+      // Обрабатываем результаты
+      // Обрабатываем цели
+      if (results[0].status === "fulfilled") {
+        const goalsData = Array.isArray(results[0].value) ? results[0].value : [];
+        setGoals(goalsData);
       } else {
-        // Обрабатываем цели
-        if (results[0].status === "fulfilled") {
-          const goalsData = Array.isArray(results[0].value) ? results[0].value : [];
-          setGoals(goalsData);
-        } else {
-          console.error("Error loading goals:", results[0].reason);
-          // Пытаемся загрузить из localStorage
-          try {
-            const cachedGoals = spiritualPathAPI.getGoalsFromLocalStorage("all");
-            setGoals(Array.isArray(cachedGoals) ? cachedGoals : []);
-          } catch (e) {
-            console.warn("Error loading cached goals:", e);
-            setGoals([]); // Устанавливаем пустой массив при ошибке
-          }
-          // Не показываем toast на мобильных
-          if (window.innerWidth > 640) {
-            toast({
-              title: "Предупреждение",
-              description: "Не удалось загрузить цели с сервера. Используются сохраненные данные.",
-              variant: "default",
-            });
-          }
+        console.error("Error loading goals:", results[0].reason);
+        // Пытаемся загрузить из localStorage
+        try {
+          const cachedGoals = spiritualPathAPI.getGoalsFromLocalStorage("all");
+          setGoals(Array.isArray(cachedGoals) ? cachedGoals : []);
+        } catch (e) {
+          console.warn("Error loading cached goals:", e);
+          setGoals([]); // Устанавливаем пустой массив при ошибке
         }
-
-        // Обрабатываем streaks
-        if (results[1].status === "fulfilled") {
-          const streaksData = Array.isArray(results[1].value) ? results[1].value : [];
-          setStreaks(streaksData);
-        } else {
-          console.error("Error loading streaks:", results[1].reason);
-          setStreaks([]); // Устанавливаем пустой массив по умолчанию
-        }
-
-        // Обрабатываем badges
-        if (results[2].status === "fulfilled") {
-          const badgesData = Array.isArray(results[2].value) ? results[2].value : [];
-          setBadges(badgesData);
-        } else {
-          console.error("Error loading badges:", results[2].reason);
-          setBadges([]); // Устанавливаем пустой массив по умолчанию
+        // Не показываем toast на мобильных
+        if (window.innerWidth > 640) {
+          toast({
+            title: "Предупреждение",
+            description: "Не удалось загрузить цели с сервера. Используются сохраненные данные.",
+            variant: "default",
+          });
         }
       }
+
+      // Обрабатываем streaks
+      if (results[1].status === "fulfilled") {
+        const streaksData = Array.isArray(results[1].value) ? results[1].value : [];
+        setStreaks(streaksData);
+      } else {
+        console.error("Error loading streaks:", results[1].reason);
+        setStreaks([]); // Устанавливаем пустой массив по умолчанию
+      }
+
+      // Обрабатываем badges
+      if (results[2].status === "fulfilled") {
+        const badgesData = Array.isArray(results[2].value) ? results[2].value : [];
+        setBadges(badgesData);
+      } else {
+        console.error("Error loading badges:", results[2].reason);
+        setBadges([]); // Устанавливаем пустой массив по умолчанию
+      }
     } catch (error) {
+      // Очищаем таймаут при ошибке
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
       console.error("Unexpected error loading data:", error);
       // Пытаемся загрузить хотя бы из localStorage
       try {
@@ -422,9 +444,12 @@ const Goals = () => {
       }
     } finally {
       loadingRef.current = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
       // НЕ устанавливаем loading в false здесь, так как UI уже показан
     }
-  };
+  }, [toast]);
 
   // Статистика (с защитой от undefined/null и мемоизацией)
   const safeStreaks = useMemo(() => Array.isArray(streaks) ? streaks : [], [streaks]);
