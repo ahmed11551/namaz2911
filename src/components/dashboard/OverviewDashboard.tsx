@@ -117,10 +117,7 @@ const GoalCard = ({ goal, onClick, index }: { goal: Goal; onClick: () => void; i
         "w-full bg-card rounded-2xl p-4 border border-border/50",
         "hover:border-primary/30 transition-all duration-300",
         "flex items-center gap-4 text-left",
-        "hover-lift ripple slide-up",
-        `stagger-${index + 1}`
       )}
-      style={{ animationDelay: `${index * 0.1}s` }}
     >
       <div className={cn(
         "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 magnetic",
@@ -187,9 +184,7 @@ const StatCard = ({
     className={cn(
       "bg-card rounded-2xl p-4 border border-border/50 text-left",
       "hover:border-primary/30 transition-all duration-300",
-      "hover-lift ripple slide-up"
     )}
-    style={{ animationDelay: `${delay}s` }}
   >
     <div className={cn(
       "w-10 h-10 rounded-xl flex items-center justify-center mb-3 magnetic subtle-float",
@@ -264,7 +259,7 @@ export const OverviewDashboard = ({ onNavigateToCalculator }: OverviewDashboardP
     return (
       <div className="flex items-center justify-center py-16">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center breathing-glow">
+          <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center">
             <Sparkles className="w-6 h-6 text-primary wiggle" />
           </div>
           <p className="text-muted-foreground text-sm">Загрузка...</p>
@@ -282,7 +277,7 @@ export const OverviewDashboard = ({ onNavigateToCalculator }: OverviewDashboardP
   }
 
   return (
-    <div className={cn("space-y-6", showContent ? "opacity-100" : "opacity-0")} style={{ transition: 'opacity 0.3s' }}>
+    <div className={cn("space-y-8", showContent ? "opacity-100" : "opacity-0")} style={{ transition: 'opacity 0.2s' }}>
       {/* Balance Card - Fintrack Style with animations */}
       <div className="balance-card p-6 sm:p-8 text-white">
         <div className="flex items-center justify-between mb-6">
@@ -299,7 +294,7 @@ export const OverviewDashboard = ({ onNavigateToCalculator }: OverviewDashboardP
         </div>
 
         {/* Progress Ring with animation */}
-        <div className="flex items-center gap-3 sm:gap-6 mb-4">
+        <div className="flex items-center gap-3 sm:gap-6 mb-6">
           <div className="relative w-20 h-20 flex-shrink-0">
             <svg className="w-full h-full transform -rotate-90">
               <circle
@@ -332,15 +327,15 @@ export const OverviewDashboard = ({ onNavigateToCalculator }: OverviewDashboardP
           </div>
           
           <div className="flex-1 space-y-2">
-            <div className="flex items-center justify-between text-sm slide-in-right stagger-1">
+            <div className="flex items-center justify-between text-sm">
               <span className="text-white/70">Выполнено</span>
               <span className="font-semibold"><AnimatedNumber value={prayerProgress.completed} /></span>
             </div>
-            <div className="flex items-center justify-between text-sm slide-in-right stagger-2">
+            <div className="flex items-center justify-between text-sm">
               <span className="text-white/70">Осталось</span>
               <span className="font-semibold"><AnimatedNumber value={prayerProgress.remaining} /></span>
             </div>
-            <div className="flex items-center justify-between text-sm slide-in-right stagger-3">
+            <div className="flex items-center justify-between text-sm">
               <span className="text-white/70">Всего</span>
               <span className="font-semibold"><AnimatedNumber value={prayerProgress.total} /></span>
             </div>
@@ -387,7 +382,7 @@ export const OverviewDashboard = ({ onNavigateToCalculator }: OverviewDashboardP
       {/* AI Assistant Card with animations */}
       <button
         onClick={() => navigate("/ai-chat")}
-        className="w-full bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 rounded-2xl p-5 shadow-lg hover:shadow-xl transition-all hover-lift ripple slide-up gradient-animate"
+        className="w-full bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 rounded-2xl p-6 sm:p-8 shadow-lg hover:shadow-xl transition-all"
         style={{ animationDelay: '0.3s' }}
       >
         <div className="flex items-center gap-4">
@@ -420,8 +415,8 @@ export const OverviewDashboard = ({ onNavigateToCalculator }: OverviewDashboardP
 
       {/* Today's Goals with staggered animation */}
       {todayGoals.length > 0 && (
-        <div className="slide-up" style={{ animationDelay: '0.4s' }}>
-          <div className="flex items-center justify-between mb-4">
+        <div>
+          <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-foreground">Цели на сегодня</h2>
             <button
               onClick={() => navigate("/goals")}
@@ -476,7 +471,7 @@ export const OverviewDashboard = ({ onNavigateToCalculator }: OverviewDashboardP
 
       {/* Achievements Preview with animations */}
       <div className="bg-card rounded-2xl p-5 border border-border/50 slide-up" style={{ animationDelay: '0.7s' }}>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-6">
           <h3 className="font-semibold text-foreground">Достижения</h3>
           <button className="text-primary text-xs font-medium magnetic">Все</button>
         </div>
@@ -507,7 +502,7 @@ export const OverviewDashboard = ({ onNavigateToCalculator }: OverviewDashboardP
       {/* Empty State with animations */}
       {goals.length === 0 && prayerProgress.total === 0 && (
         <div className="bg-card rounded-2xl p-6 sm:p-8 border border-border/50 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4 breathing-glow">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
             <Sparkles className="w-8 h-8 text-primary wiggle" />
           </div>
           <h3 className="font-semibold text-foreground mb-2 text-glow">Начните свой путь</h3>
