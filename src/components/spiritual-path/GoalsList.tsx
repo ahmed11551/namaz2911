@@ -91,11 +91,31 @@ export const GoalsList = () => {
       setGoals(updatedGoals);
     } catch (error) {
       console.error("Error loading goals:", error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось загрузить цели",
-        variant: "destructive",
-      });
+      // Пытаемся загрузить из localStorage
+      try {
+        const cachedGoals = spiritualPathAPI.getGoalsFromLocalStorage();
+        if (cachedGoals.length > 0) {
+          setGoals(cachedGoals);
+          toast({
+            title: "Предупреждение",
+            description: "Используются сохраненные данные. Некоторые данные могут быть устаревшими.",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Ошибка",
+            description: "Не удалось загрузить цели",
+            variant: "destructive",
+          });
+        }
+      } catch (e) {
+        console.warn("Error loading cached goals:", e);
+        toast({
+          title: "Ошибка",
+          description: "Не удалось загрузить цели",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }

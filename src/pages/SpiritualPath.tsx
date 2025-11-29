@@ -58,6 +58,15 @@ export default function SpiritualPath() {
       setGoals(data);
     } catch (error) {
       console.error("Error loading goals:", error);
+      // Пытаемся загрузить из localStorage
+      try {
+        const cachedGoals = spiritualPathAPI.getGoalsFromLocalStorage("active");
+        if (cachedGoals.length > 0) {
+          setGoals(cachedGoals);
+        }
+      } catch (e) {
+        console.warn("Error loading cached goals:", e);
+      }
     } finally {
       setLoading(false);
     }
@@ -230,9 +239,8 @@ export default function SpiritualPath() {
                       "select-none"
                     )}
                     style={{ touchAction: 'manipulation' }}
-                    aria-label={tab.label}
                   >
-                    <tab.icon className="w-4 h-4 shrink-0" aria-hidden="true" />
+                    <tab.icon className="w-4 h-4 shrink-0" />
                     <span>{tab.label}</span>
                   </TabsTrigger>
                 ))}

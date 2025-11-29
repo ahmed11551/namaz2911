@@ -1559,7 +1559,7 @@ export const spiritualPathAPI = {
     try {
       // Используем AbortController для timeout
       const controller = new AbortController();
-      let timeoutId: NodeJS.Timeout | null = setTimeout(() => controller.abort(), 3000); // 3 секунды timeout
+      let timeoutId: NodeJS.Timeout | null = setTimeout(() => controller.abort(), 5000); // 5 секунд timeout
       
       const response = await fetch(
         `${SUPABASE_FUNCTIONS_URL}/spiritual-path-api/goals${status ? `?status=${status}` : ""}`,
@@ -1584,8 +1584,13 @@ export const spiritualPathAPI = {
         // Сохраняем в localStorage для кэширования
         if (goals && Array.isArray(goals)) {
           localStorage.setItem("spiritual_path_goals", JSON.stringify(goals));
+          return goals;
+        } else {
+          console.warn("Goals API returned invalid data format");
+          return cachedGoals;
         }
-        return goals;
+      } else {
+        console.warn(`Goals API returned status ${response.status}, using cached data`);
       }
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
@@ -1772,7 +1777,7 @@ export const spiritualPathAPI = {
     try {
       // Используем AbortController для timeout
       const controller = new AbortController();
-      let timeoutId: NodeJS.Timeout | null = setTimeout(() => controller.abort(), 3000); // 3 секунды timeout
+      let timeoutId: NodeJS.Timeout | null = setTimeout(() => controller.abort(), 5000); // 5 секунд timeout
       
       const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/spiritual-path-api/badges`, {
         method: "GET",
@@ -1790,13 +1795,16 @@ export const spiritualPathAPI = {
       }
 
       if (response.ok) {
-        return await response.json();
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
+      } else {
+        console.warn(`Badges API returned status ${response.status}`);
       }
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
-        console.warn("Badges API timeout");
+        console.warn("Badges API timeout, using empty array");
       } else {
-        console.warn("Supabase API недоступен:", error);
+        console.warn("Supabase API недоступен для badges:", error);
       }
     }
 
@@ -1813,7 +1821,7 @@ export const spiritualPathAPI = {
     try {
       // Используем AbortController для timeout
       const controller = new AbortController();
-      let timeoutId: NodeJS.Timeout | null = setTimeout(() => controller.abort(), 3000); // 3 секунды timeout
+      let timeoutId: NodeJS.Timeout | null = setTimeout(() => controller.abort(), 5000); // 5 секунд timeout
       
       const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/spiritual-path-api/streaks`, {
         method: "GET",
@@ -1831,13 +1839,16 @@ export const spiritualPathAPI = {
       }
 
       if (response.ok) {
-        return await response.json();
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
+      } else {
+        console.warn(`Streaks API returned status ${response.status}`);
       }
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
-        console.warn("Streaks API timeout");
+        console.warn("Streaks API timeout, using empty array");
       } else {
-        console.warn("Supabase API недоступен:", error);
+        console.warn("Supabase API недоступен для streaks:", error);
       }
     }
 

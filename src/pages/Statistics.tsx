@@ -63,28 +63,65 @@ const Statistics = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [goalsData, streaksData, badgesData] = await Promise.all([
+      // Загружаем данные параллельно, но обрабатываем ошибки для каждого отдельно
+      const results = await Promise.allSettled([
         spiritualPathAPI.getGoals("all"),
         spiritualPathAPI.getStreaks(),
         spiritualPathAPI.getBadges(),
       ]);
-      
-      
-      setGoals(goalsData);
-      setStreaks(streaksData);
-      setBadges(badgesData);
 
-      // Вычисляем активность по дням недели
-      const activity = [0, 0, 0, 0, 0, 0, 0];
-      const dailyStreak = streaksData.find(s => s.streak_type === "daily_all");
-      if (dailyStreak && dailyStreak.current_streak > 0) {
-        for (let i = 0; i < Math.min(dailyStreak.current_streak, 7); i++) {
-          activity[6 - i] = 100;
+      // Обрабатываем цели
+      if (results[0].status === "fulfilled") {
+        setGoals(results[0].value);
+      } else {
+        console.error("Error loading goals:", results[0].reason);
+        // Пытаемся загрузить из localStorage
+        try {
+          const cachedGoals = spiritualPathAPI.getGoalsFromLocalStorage("all");
+          if (cachedGoals.length > 0) {
+            setGoals(cachedGoals);
+          }
+        } catch (e) {
+          console.warn("Error loading cached goals:", e);
         }
       }
-      setWeeklyActivity(activity);
+
+      // Обрабатываем streaks
+      if (results[1].status === "fulfilled") {
+        setStreaks(results[1].value);
+        // Вычисляем активность по дням недели
+        const activity = [0, 0, 0, 0, 0, 0, 0];
+        const dailyStreak = results[1].value.find(s => s.streak_type === "daily_all");
+        if (dailyStreak && dailyStreak.current_streak > 0) {
+          for (let i = 0; i < Math.min(dailyStreak.current_streak, 7); i++) {
+            activity[6 - i] = 100;
+          }
+        }
+        setWeeklyActivity(activity);
+      } else {
+        console.error("Error loading streaks:", results[1].reason);
+        setStreaks([]);
+        setWeeklyActivity([0, 0, 0, 0, 0, 0, 0]);
+      }
+
+      // Обрабатываем badges
+      if (results[2].status === "fulfilled") {
+        setBadges(results[2].value);
+      } else {
+        console.error("Error loading badges:", results[2].reason);
+        setBadges([]);
+      }
     } catch (error) {
-      console.error("Error loading data:", error);
+      console.error("Unexpected error loading data:", error);
+      // Пытаемся загрузить хотя бы из localStorage
+      try {
+        const cachedGoals = spiritualPathAPI.getGoalsFromLocalStorage("all");
+        if (cachedGoals.length > 0) {
+          setGoals(cachedGoals);
+        }
+      } catch (e) {
+        console.warn("Error loading cached goals:", e);
+      }
     } finally {
       setLoading(false);
     }

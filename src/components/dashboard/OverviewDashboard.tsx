@@ -232,15 +232,48 @@ export const OverviewDashboard = ({ onNavigateToCalculator }: OverviewDashboardP
     let mounted = true;
     const loadData = async () => {
       try {
-        const [activeGoals, streakData] = await Promise.all([
+        // Загружаем данные параллельно, но обрабатываем ошибки для каждого отдельно
+        const results = await Promise.allSettled([
           spiritualPathAPI.getGoals("active"),
           spiritualPathAPI.getStreaks(),
         ]);
+        
         if (!mounted) return;
-        setGoals(activeGoals);
-        setStreaks(streakData);
+        
+        // Обрабатываем цели
+        if (results[0].status === "fulfilled") {
+          setGoals(results[0].value);
+        } else {
+          console.error("Failed to load goals:", results[0].reason);
+          // Пытаемся загрузить из localStorage
+          try {
+            const cachedGoals = spiritualPathAPI.getGoalsFromLocalStorage("active");
+            if (cachedGoals.length > 0) {
+              setGoals(cachedGoals);
+            }
+          } catch (e) {
+            console.warn("Error loading cached goals:", e);
+          }
+        }
+        
+        // Обрабатываем streaks
+        if (results[1].status === "fulfilled") {
+          setStreaks(results[1].value);
+        } else {
+          console.error("Failed to load streaks:", results[1].reason);
+          setStreaks([]);
+        }
       } catch (error) {
-        console.error("Failed to load dashboard data:", error);
+        console.error("Unexpected error loading dashboard data:", error);
+        // Пытаемся загрузить хотя бы из localStorage
+        try {
+          const cachedGoals = spiritualPathAPI.getGoalsFromLocalStorage("active");
+          if (cachedGoals.length > 0) {
+            setGoals(cachedGoals);
+          }
+        } catch (e) {
+          console.warn("Error loading cached goals:", e);
+        }
       } finally {
         if (mounted) setGoalsLoading(false);
       }
