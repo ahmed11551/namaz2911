@@ -1602,7 +1602,13 @@ export const spiritualPathAPI = {
     const userId = getUserId();
     
     // Сначала загружаем из localStorage для мгновенного отображения
-    const cachedGoals = this.getGoalsFromLocalStorage(status);
+    let cachedGoals: Goal[] = [];
+    try {
+      cachedGoals = this.getGoalsFromLocalStorage(status);
+    } catch (error) {
+      console.warn("Error loading goals from localStorage:", error);
+      cachedGoals = [];
+    }
     
     if (!userId) {
       return cachedGoals;
@@ -1635,7 +1641,11 @@ export const spiritualPathAPI = {
         const goals = await response.json();
         // Сохраняем в localStorage для кэширования
         if (goals && Array.isArray(goals)) {
-          localStorage.setItem("spiritual_path_goals", JSON.stringify(goals));
+          try {
+            localStorage.setItem("spiritual_path_goals", JSON.stringify(goals));
+          } catch (e) {
+            console.warn("Error saving goals to localStorage:", e);
+          }
           return goals;
         } else {
           console.warn("Goals API returned invalid data format");

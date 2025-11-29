@@ -1,6 +1,6 @@
 // Страница Цели и Привычки - дизайн Fintrack (тёмная тема)
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { MainHeader } from "@/components/layout/MainHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Button } from "@/components/ui/button";
@@ -97,6 +97,7 @@ const getTodayTip = () => {
 };
 
 const getCategoryIcon = (category: string, title: string) => {
+  if (!title) return <Star className="w-5 h-5" />;
   const lowerTitle = title.toLowerCase();
   if (lowerTitle.includes("утренн") || lowerTitle.includes("фаджр")) {
     return <Sun className="w-5 h-5" />;
@@ -141,11 +142,18 @@ const GoalCard = ({
   onClick: () => void;
   onQuickAdd?: () => void;
 }) => {
-  const progress = goal.target_value > 0 
-    ? (goal.current_value / goal.target_value) * 100 
+  // Защита от некорректных данных
+  if (!goal || !goal.title) {
+    return null;
+  }
+  
+  const currentValue = goal.current_value || 0;
+  const targetValue = goal.target_value || 0;
+  const progress = targetValue > 0 
+    ? (currentValue / targetValue) * 100 
     : 0;
-  const isComplete = goal.current_value >= goal.target_value;
-  const colors = getCategoryColors(goal.category);
+  const isComplete = currentValue >= targetValue;
+  const colors = getCategoryColors(goal.category || "other");
   
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -171,7 +179,7 @@ const GoalCard = ({
         `bg-gradient-to-br ${colors.gradient}`
       )}>
         <div className="text-white">
-          {getCategoryIcon(goal.category, goal.title)}
+          {getCategoryIcon(goal.category || "other", goal.title || "")}
         </div>
       </div>
 
@@ -203,7 +211,7 @@ const GoalCard = ({
             "text-xs font-semibold whitespace-nowrap flex-shrink-0",
             isComplete ? "text-primary" : "text-muted-foreground"
           )}>
-            {goal.current_value}/{goal.target_value}
+            {currentValue}/{targetValue}
           </span>
         </div>
       </div>
@@ -248,6 +256,7 @@ const Goals = () => {
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [goalDetailOpen, setGoalDetailOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const loadingRef = useRef(false); // Защита от повторных вызовов
 
   // Генерация дней недели
   const weekDays = useMemo(() => {
@@ -267,84 +276,153 @@ const Goals = () => {
   }, []);
 
   useEffect(() => {
-    loadData();
+    if (!loadingRef.current) {
+      loadData();
+    }
+    
+    return () => {
+      // Cleanup при размонтировании
+      loadingRef.current = false;
+    };
   }, []);
 
   const loadData = async () => {
+    // Защита от повторных вызовов
+    if (loadingRef.current) {
+      console.warn("loadData already in progress, skipping");
+      return;
+    }
+    
+    loadingRef.current = true;
     setLoading(true);
+    
+    // Общий таймаут для всей загрузки (максимум 8 секунд)
+    const timeoutPromise = new Promise<void>((resolve) => {
+      setTimeout(() => {
+        console.warn("Load data timeout reached");
+        resolve();
+      }, 8000);
+    });
+
     try {
       // Загружаем данные параллельно, но обрабатываем ошибки для каждого отдельно
-      const results = await Promise.allSettled([
-        spiritualPathAPI.getGoals("all"),
-        spiritualPathAPI.getStreaks(),
-        spiritualPathAPI.getBadges(),
+      const loadPromise = Promise.allSettled([
+        spiritualPathAPI.getGoals("all").catch((err) => {
+          console.error("Error in getGoals:", err);
+          // Пытаемся загрузить из localStorage при ошибке
+          try {
+            return spiritualPathAPI.getGoalsFromLocalStorage("all");
+          } catch (e) {
+            console.warn("Error loading cached goals:", e);
+            return [];
+          }
+        }),
+        spiritualPathAPI.getStreaks().catch((err) => {
+          console.error("Error in getStreaks:", err);
+          return [];
+        }),
+        spiritualPathAPI.getBadges().catch((err) => {
+          console.error("Error in getBadges:", err);
+          return [];
+        }),
       ]);
 
-      // Обрабатываем цели
-      if (results[0].status === "fulfilled") {
-        setGoals(results[0].value);
-      } else {
-        console.error("Error loading goals:", results[0].reason);
-        // Пытаемся загрузить из localStorage
+      // Ждем либо загрузку, либо таймаут (что наступит раньше)
+      const results = await Promise.race([loadPromise, timeoutPromise.then(() => null)]);
+
+      if (results === null) {
+        // Таймаут - загружаем из кэша
+        console.warn("Loading timeout, using cached data");
         try {
           const cachedGoals = spiritualPathAPI.getGoalsFromLocalStorage("all");
-          if (cachedGoals.length > 0) {
-            setGoals(cachedGoals);
-          }
+          setGoals(Array.isArray(cachedGoals) ? cachedGoals : []);
         } catch (e) {
           console.warn("Error loading cached goals:", e);
+          setGoals([]); // Устанавливаем пустой массив при ошибке
         }
+        setStreaks([]);
+        setBadges([]);
         toast({
           title: "Предупреждение",
-          description: "Не удалось загрузить цели с сервера. Используются сохраненные данные.",
+          description: "Загрузка заняла слишком много времени. Используются сохраненные данные.",
           variant: "default",
         });
-      }
-
-      // Обрабатываем streaks
-      if (results[1].status === "fulfilled") {
-        setStreaks(results[1].value);
       } else {
-        console.error("Error loading streaks:", results[1].reason);
-        setStreaks([]); // Устанавливаем пустой массив по умолчанию
-      }
+        // Обрабатываем цели
+        if (results[0].status === "fulfilled") {
+          const goalsData = Array.isArray(results[0].value) ? results[0].value : [];
+          setGoals(goalsData);
+        } else {
+          console.error("Error loading goals:", results[0].reason);
+          // Пытаемся загрузить из localStorage
+          try {
+            const cachedGoals = spiritualPathAPI.getGoalsFromLocalStorage("all");
+            setGoals(Array.isArray(cachedGoals) ? cachedGoals : []);
+          } catch (e) {
+            console.warn("Error loading cached goals:", e);
+            setGoals([]); // Устанавливаем пустой массив при ошибке
+          }
+          toast({
+            title: "Предупреждение",
+            description: "Не удалось загрузить цели с сервера. Используются сохраненные данные.",
+            variant: "default",
+          });
+        }
 
-      // Обрабатываем badges
-      if (results[2].status === "fulfilled") {
-        setBadges(results[2].value);
-      } else {
-        console.error("Error loading badges:", results[2].reason);
-        setBadges([]); // Устанавливаем пустой массив по умолчанию
+        // Обрабатываем streaks
+        if (results[1].status === "fulfilled") {
+          const streaksData = Array.isArray(results[1].value) ? results[1].value : [];
+          setStreaks(streaksData);
+        } else {
+          console.error("Error loading streaks:", results[1].reason);
+          setStreaks([]); // Устанавливаем пустой массив по умолчанию
+        }
+
+        // Обрабатываем badges
+        if (results[2].status === "fulfilled") {
+          const badgesData = Array.isArray(results[2].value) ? results[2].value : [];
+          setBadges(badgesData);
+        } else {
+          console.error("Error loading badges:", results[2].reason);
+          setBadges([]); // Устанавливаем пустой массив по умолчанию
+        }
       }
     } catch (error) {
       console.error("Unexpected error loading data:", error);
       toast({
         title: "Ошибка",
-        description: "Произошла ошибка при загрузке данных. Попробуйте обновить страницу.",
+        description: "Произошла ошибка при загрузке данных. Используются сохраненные данные.",
         variant: "destructive",
       });
-      // Пытаемся загрузить хотя бы из localStorage
+        // Пытаемся загрузить хотя бы из localStorage
       try {
         const cachedGoals = spiritualPathAPI.getGoalsFromLocalStorage("all");
-        if (cachedGoals.length > 0) {
-          setGoals(cachedGoals);
-        }
+        setGoals(Array.isArray(cachedGoals) ? cachedGoals : []);
       } catch (e) {
         console.warn("Error loading cached goals:", e);
+        setGoals([]); // Устанавливаем пустой массив при ошибке
       }
+      setStreaks([]);
+      setBadges([]);
     } finally {
+      loadingRef.current = false;
       setLoading(false);
     }
   };
 
-  // Статистика
-  const currentStreak = streaks.find(s => s.streak_type === "daily_all")?.current_streak || 0;
-  const longestStreak = streaks.find(s => s.streak_type === "daily_all")?.longest_streak || currentStreak;
-  const completedGoals = goals.filter(g => g.status === "completed").length;
-  const activeGoals = goals.filter(g => g.status === "active").length;
-  const totalBadges = badges.length;
+  // Статистика (с защитой от undefined/null)
+  const safeStreaks = Array.isArray(streaks) ? streaks : [];
+  const safeGoals = Array.isArray(goals) ? goals : [];
+  const safeBadges = Array.isArray(badges) ? badges : [];
+  
+  const currentStreak = safeStreaks.find(s => s.streak_type === "daily_all")?.current_streak || 0;
+  const longestStreak = safeStreaks.find(s => s.streak_type === "daily_all")?.longest_streak || currentStreak;
+  const completedGoals = safeGoals.filter(g => g?.status === "completed").length;
+  const activeGoals = safeGoals.filter(g => g?.status === "active").length;
+  const totalBadges = safeBadges.length;
 
-  const filteredGoals = goals.filter((goal) => {
+  const filteredGoals = safeGoals.filter((goal) => {
+    if (!goal || !goal.title) return false;
     const matchesSearch = 
       goal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       goal.description?.toLowerCase().includes(searchQuery.toLowerCase());
