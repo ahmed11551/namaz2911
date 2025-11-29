@@ -40,8 +40,9 @@ import { cn } from "@/lib/utils";
 import { CreateGoalDialog } from "@/components/spiritual-path/CreateGoalDialog";
 import { SmartGoalTemplates } from "@/components/spiritual-path/SmartGoalTemplates";
 import { useNavigate } from "react-router-dom";
-import { AnalyticsWidget } from "@/components/goals/AnalyticsWidget";
-import { AIRecommendations } from "@/components/goals/AIRecommendations";
+// Упрощённый дизайн - виджеты убраны для лучшей производительности и чистоты интерфейса
+// import { AnalyticsWidget } from "@/components/goals/AnalyticsWidget";
+// import { AIRecommendations } from "@/components/goals/AIRecommendations";
 
 // Исламские советы дня
 const ISLAMIC_TIPS = [
@@ -157,15 +158,16 @@ const GoalCard = ({
     <div
       onClick={onClick}
       className={cn(
-        "w-full bg-card rounded-2xl p-4 border border-border/50 cursor-pointer",
-        "hover:border-primary/30 transition-all duration-300",
-        "flex items-center gap-4 text-left hover-lift ripple",
-        isComplete && "ring-1 ring-primary/30 neon-border"
+        "w-full bg-card rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-border/50 cursor-pointer",
+        "hover:border-primary/40 hover:shadow-md hover:shadow-primary/10 transition-all duration-200",
+        "flex items-center gap-3 sm:gap-4 text-left group",
+        isComplete && "ring-2 ring-primary/30 bg-primary/5"
       )}
     >
-      {/* Иконка с градиентом */}
+      {/* Иконка с градиентом - улучшенная */}
       <div className={cn(
-        "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
+        "w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0",
+        "shadow-md shadow-black/10",
         `bg-gradient-to-br ${colors.gradient}`
       )}>
         <div className="text-white">
@@ -173,47 +175,56 @@ const GoalCard = ({
         </div>
       </div>
 
-      {/* Контент */}
+      {/* Контент - улучшенный */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-2">
-          <h3 className="font-semibold text-foreground truncate">
+        <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
+          <h3 className="font-semibold text-sm sm:text-base text-foreground truncate">
             {goal.title}
           </h3>
-          {isComplete && <span className="text-primary">✓</span>}
+          {isComplete && (
+            <span className="text-primary text-lg flex-shrink-0">✓</span>
+          )}
         </div>
         
-        {/* Прогресс бар */}
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
+        {/* Прогресс бар - улучшенный */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex-1 h-1.5 sm:h-2 bg-secondary/50 rounded-full overflow-hidden">
             <div
               className={cn(
-                "h-full rounded-full transition-all duration-700",
-                isComplete ? "bg-primary" : "bg-primary/70"
+                "h-full rounded-full transition-all duration-500",
+                isComplete 
+                  ? "bg-gradient-to-r from-primary to-primary-dark" 
+                  : "bg-gradient-to-r from-primary/80 to-primary"
               )}
               style={{ width: `${Math.min(progress, 100)}%` }}
             />
           </div>
-          <span className={cn("text-xs font-medium whitespace-nowrap", colors.text)}>
+          <span className={cn(
+            "text-xs font-semibold whitespace-nowrap flex-shrink-0",
+            isComplete ? "text-primary" : "text-muted-foreground"
+          )}>
             {goal.current_value}/{goal.target_value}
           </span>
         </div>
       </div>
 
-      {/* Кнопка быстрого добавления */}
+      {/* Кнопка быстрого добавления - улучшенная */}
       <div className="flex-shrink-0">
         {isComplete ? (
-          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-primary flex items-center justify-center shadow-md shadow-primary/30">
             <Check className="w-5 h-5 text-primary-foreground" />
           </div>
         ) : (
           <button
             onClick={handleQuickAdd}
             className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center transition-all",
+              "w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all",
               "bg-secondary hover:bg-primary hover:text-primary-foreground text-muted-foreground",
-              "active:scale-90"
+              "hover:shadow-md hover:shadow-primary/20 active:scale-95",
+              "group-hover:bg-primary/10 group-hover:text-primary"
             )}
             title="Добавить +1"
+            aria-label="Добавить прогресс"
           >
             <Plus className="w-5 h-5" />
           </button>
@@ -451,60 +462,49 @@ const Goals = () => {
       <MainHeader />
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-lg">
-        {/* Header */}
-        {(() => {
-          const hour = new Date().getHours();
-          let greeting = "Доброе утро";
-          let emoji = "🌅";
-          if (hour >= 12 && hour < 17) {
-            greeting = "Добрый день";
-            emoji = "☀️";
-          } else if (hour >= 17 && hour < 21) {
-            greeting = "Добрый вечер";
-            emoji = "🌇";
-          } else if (hour >= 21 || hour < 5) {
-            greeting = "Доброй ночи";
-            emoji = "🌙";
-          }
-          return (
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm text-muted-foreground mb-0.5">{greeting} {emoji}</p>
-                <h1 className="text-2xl font-bold text-foreground">Ваши цели</h1>
-              </div>
-              <button
-                onClick={() => navigate("/statistics")}
-                className="p-2.5 rounded-xl bg-card hover:bg-secondary transition-colors border border-border/50"
-              >
-                <BarChart3 className="w-5 h-5 text-muted-foreground" />
-              </button>
-            </div>
-          );
-        })()}
+        {/* Header - упрощённый */}
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Цели</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              {activeGoals > 0 ? `${activeGoals} активных` : "Создайте первую цель"}
+            </p>
+          </div>
+          <button
+            onClick={() => navigate("/statistics")}
+            className="p-2 sm:p-2.5 rounded-xl bg-card hover:bg-secondary transition-colors border border-border/50"
+            aria-label="Статистика"
+          >
+            <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+          </button>
+        </div>
 
-        {/* Горизонтальный календарь */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar">
+        {/* Горизонтальный календарь - упрощённый */}
+        <div className="flex gap-1.5 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-2 -mx-3 sm:-mx-4 px-3 sm:px-4 no-scrollbar">
           {weekDays.map((day) => {
             const isSelected = day.date.toDateString() === selectedDate.toDateString();
+            const isToday = day.isToday;
             return (
               <button
                 key={day.dayNum}
                 onClick={() => setSelectedDate(day.date)}
                 className={cn(
-                  "flex flex-col items-center min-w-[52px] py-2 px-3 rounded-xl transition-all",
+                  "flex flex-col items-center min-w-[44px] sm:min-w-[52px] py-2 px-2 sm:px-3 rounded-xl transition-all",
                   isSelected
-                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-                    : "bg-card text-muted-foreground border border-border/50 hover:border-primary/30"
+                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25 scale-105"
+                    : isToday
+                    ? "bg-primary/20 text-foreground border border-primary/30"
+                    : "bg-card/50 text-muted-foreground border border-border/30 hover:border-primary/20 hover:bg-card"
                 )}
               >
                 <span className={cn(
-                  "text-xs font-medium mb-1",
+                  "text-[10px] sm:text-xs font-medium mb-0.5 sm:mb-1",
                   isSelected ? "text-primary-foreground/70" : "text-muted-foreground"
                 )}>
                   {day.dayName}
                 </span>
                 <span className={cn(
-                  "text-lg font-bold",
+                  "text-base sm:text-lg font-bold",
                   isSelected ? "text-primary-foreground" : "text-foreground"
                 )}>
                   {day.dayNum}
@@ -514,243 +514,99 @@ const Goals = () => {
           })}
         </div>
 
-        {/* Виджет статистики - Fintrack style с анимациями */}
-        <div className="bg-card rounded-2xl p-5 mb-6 border border-border/50 slide-up stagger-1">
-          <div className="flex items-center justify-between">
-            {/* Круговые виджеты прогресса */}
-            <div className="flex gap-4">
-              <div className="text-center">
-                <div className="relative w-16 h-16">
-                  <svg className="w-full h-full -rotate-90">
-                    <circle cx="32" cy="32" r="28" fill="none" stroke="hsl(var(--secondary))" strokeWidth="4" />
-                    <circle 
-                      cx="32" cy="32" r="28" fill="none" 
-                      stroke="hsl(var(--primary))" strokeWidth="4" strokeLinecap="round"
-                      strokeDasharray={176} 
-                      strokeDashoffset={176 - (176 * Math.min(activeGoals * 15, 100)) / 100}
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-foreground text-sm font-bold">{Math.min(activeGoals * 15, 100)}%</span>
-                  </div>
-                </div>
-                <p className="text-muted-foreground text-xs mt-1">Неделя</p>
+        {/* Компактная статистика - объединённая */}
+        <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl p-4 sm:p-5 mb-4 sm:mb-6 border border-primary/20 slide-up">
+          <div className="grid grid-cols-3 gap-3 sm:gap-4">
+            {/* Streak */}
+            <button 
+              onClick={() => navigate("/statistics")}
+              className="bg-card/80 backdrop-blur rounded-xl p-3 sm:p-4 text-center hover:bg-card transition-all border border-border/30"
+            >
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center mx-auto mb-2">
+                <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              
-              <div className="text-center">
-                <div className="relative w-16 h-16">
-                  <svg className="w-full h-full -rotate-90">
-                    <circle cx="32" cy="32" r="28" fill="none" stroke="hsl(var(--secondary))" strokeWidth="4" />
-                    <circle 
-                      cx="32" cy="32" r="28" fill="none" 
-                      stroke="hsl(var(--primary))" strokeWidth="4" strokeLinecap="round"
-                      strokeDasharray={176} 
-                      strokeDashoffset={176 - (176 * Math.min(completedGoals * 10 + 30, 100)) / 100}
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-foreground text-sm font-bold">{Math.min(completedGoals * 10 + 30, 100)}%</span>
-                  </div>
-                </div>
-                <p className="text-muted-foreground text-xs mt-1">Месяц</p>
+              <p className="text-xl sm:text-2xl font-bold text-foreground mb-0.5">{currentStreak}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Дней</p>
+            </button>
+            
+            {/* Активные */}
+            <div className="bg-card/80 backdrop-blur rounded-xl p-3 sm:p-4 text-center border border-border/30">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center mx-auto mb-2">
+                <Target className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
+              <p className="text-xl sm:text-2xl font-bold text-foreground mb-0.5">{activeGoals}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Активных</p>
             </div>
-
-            {/* Streak виджет */}
-            <div className="bg-secondary rounded-xl p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
-                  <Flame className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{currentStreak}</p>
-                  <p className="text-xs text-muted-foreground">Текущий</p>
-                </div>
+            
+            {/* Выполнено */}
+            <button 
+              onClick={() => navigate("/statistics")}
+              className="bg-card/80 backdrop-blur rounded-xl p-3 sm:p-4 text-center hover:bg-card transition-all border border-border/30"
+            >
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center mx-auto mb-2">
+                <Check className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <div className="flex gap-4 text-center">
-                <div>
-                  <p className="text-primary font-bold">{longestStreak}</p>
-                  <p className="text-[10px] text-muted-foreground">Рекорд</p>
-                </div>
-                <div>
-                  <p className="text-primary font-bold">{completedGoals}</p>
-                  <p className="text-[10px] text-muted-foreground">Всего</p>
-                </div>
-              </div>
-            </div>
+              <p className="text-xl sm:text-2xl font-bold text-foreground mb-0.5">{completedGoals}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Готово</p>
+            </button>
           </div>
-        </div>
-
-        {/* Мини-статистика с анимациями */}
-        <div className="grid grid-cols-4 gap-2 mb-6">
-          <button 
-            onClick={() => navigate("/statistics")}
-            className="bg-card rounded-xl p-3 border border-border/50 text-center hover:border-primary/30 transition-all hover-lift ripple slide-up stagger-2"
-          >
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center mx-auto mb-1.5 magnetic heartbeat">
-              <Flame className="w-4 h-4 text-white" />
-            </div>
-            <p className="text-lg font-bold text-foreground">{currentStreak}</p>
-            <p className="text-[9px] text-muted-foreground font-medium">ДНЕЙ</p>
-          </button>
           
-          <button className="bg-card rounded-xl p-3 border border-border/50 text-center hover:border-primary/30 transition-all hover-lift ripple slide-up stagger-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center mx-auto mb-1.5 magnetic wiggle-hover">
-              <TrendingUp className="w-4 h-4 text-white" />
-            </div>
-            <p className="text-lg font-bold text-foreground">{activeGoals}</p>
-            <p className="text-[9px] text-muted-foreground font-medium">АКТИВНЫХ</p>
-          </button>
-          
-          <button className="bg-card rounded-xl p-3 border border-border/50 text-center hover:border-primary/30 transition-all hover-lift ripple slide-up stagger-4">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center mx-auto mb-1.5 magnetic wiggle-hover">
-              <Check className="w-4 h-4 text-white" />
-            </div>
-            <p className="text-lg font-bold text-foreground">{completedGoals}</p>
-            <p className="text-[9px] text-muted-foreground font-medium">ГОТОВО</p>
-          </button>
-          
-          <button 
-            onClick={() => navigate("/statistics")}
-            className="bg-card rounded-xl p-3 border border-border/50 text-center hover:border-primary/30 transition-all hover-lift ripple slide-up stagger-5"
-          >
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-yellow-500 to-amber-500 flex items-center justify-center mx-auto mb-1.5 magnetic wiggle-hover">
-              <Trophy className="w-4 h-4 text-white" />
-            </div>
-            <p className="text-lg font-bold text-foreground">{totalBadges}</p>
-            <p className="text-[9px] text-muted-foreground font-medium">БЕЙДЖЕЙ</p>
-          </button>
-        </div>
-
-        {/* Daily Summary с анимацией */}
-        <div className="bg-card rounded-2xl p-4 border border-border/50 mb-4 slide-up stagger-6">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-              <Zap className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-foreground">Итоги дня</h3>
-              <p className="text-xs text-muted-foreground">
-                {new Date().toLocaleDateString("ru", { weekday: "long", day: "numeric", month: "long" })}
+          {/* Мотивационное сообщение */}
+          {currentStreak > 0 && (
+            <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border/30 text-center">
+              <p className="text-sm text-primary font-medium">
+                🔥 {currentStreak} {currentStreak === 1 ? "день" : currentStreak < 5 ? "дня" : "дней"} подряд! Продолжайте!
               </p>
             </div>
+          )}
+        </div>
+
+        {/* Search и фильтры - объединённые */}
+        <div className="mb-4 sm:mb-6 space-y-3">
+          {/* Поиск */}
+          <div className="relative">
+            <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+            <Input
+              placeholder="Поиск целей..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 sm:pl-12 h-11 sm:h-12 rounded-xl bg-card border-border/50 text-sm sm:text-base"
+            />
           </div>
           
-          <div className="space-y-2">
-            {activeGoals > 0 ? (
-              <>
-                <div className="flex items-center justify-between py-2 px-3 bg-primary/10 rounded-xl">
-                  <span className="text-sm text-primary">Осталось выполнить</span>
-                  <span className="font-bold text-primary">{activeGoals} {activeGoals === 1 ? "цель" : activeGoals < 5 ? "цели" : "целей"}</span>
-                </div>
-                {completedGoals > 0 && (
-                  <div className="flex items-center justify-between py-2 px-3 bg-blue-500/10 rounded-xl">
-                    <span className="text-sm text-blue-400">Уже выполнено</span>
-                    <span className="font-bold text-blue-400">{completedGoals} ✓</span>
-                  </div>
+          {/* Фильтры - компактные */}
+          <div className="flex gap-2">
+            {[
+              { id: "active", label: "Активные", count: activeGoals },
+              { id: "completed", label: "Готово", count: completedGoals.length },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setFilter(tab.id as typeof filter)}
+                className={cn(
+                  "px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all",
+                  "flex items-center gap-1.5 sm:gap-2",
+                  filter === tab.id
+                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                    : "bg-card text-muted-foreground border border-border/50 hover:border-primary/30"
                 )}
-                <p className="text-xs text-muted-foreground text-center pt-1">
-                  {currentStreak > 0 
-                    ? `🔥 ${currentStreak} дней подряд! Продолжайте!` 
-                    : "Начните сегодня свою серию!"}
-                </p>
-              </>
-            ) : (
-              <div className="text-center py-3">
-                <p className="text-muted-foreground text-sm mb-2">У вас пока нет активных целей</p>
-                <button 
-                  onClick={() => setCreateDialogOpen(true)}
-                  className="text-primary font-medium text-sm hover:underline"
-                >
-                  + Создать первую цель
-                </button>
-              </div>
-            )}
+              >
+                {tab.label}
+                {tab.count > 0 && (
+                  <span className={cn(
+                    "px-1.5 py-0.5 rounded-full text-[10px] font-bold",
+                    filter === tab.id ? "bg-primary-foreground/20 text-primary-foreground" : "bg-secondary text-foreground"
+                  )}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Islamic Life Hack - совет дня */}
-        {(() => {
-          const tip = getTodayTip();
-          const TipIcon = tip.icon;
-          return (
-            <div className={cn(
-              "bg-gradient-to-br rounded-2xl p-4 mb-6 relative overflow-hidden",
-              tip.color
-            )}>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-              <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-              
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
-                    <Lightbulb className="w-4 h-4 text-white" />
-                  </div>
-                  <span className="text-white/80 text-xs font-medium uppercase tracking-wider">Совет дня</span>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-                    <TipIcon className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="text-white font-bold mb-1">{tip.title}</h4>
-                    <p className="text-white/90 text-sm leading-relaxed">{tip.description}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* Analytics Widget with Week/Month toggle */}
-        <AnalyticsWidget 
-          goals={goals} 
-          streaks={streaks} 
-          className="mb-4 animate-fade-in"
-        />
-
-        {/* AI Recommendations */}
-        <AIRecommendations 
-          goals={goals} 
-          streaks={streaks} 
-          className="mb-4 animate-fade-in"
-        />
-
-        {/* Search */}
-        <div className="relative mb-4">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <Input
-            placeholder="Поиск целей..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 h-12 rounded-xl bg-card border-border/50 text-base"
-          />
-        </div>
-
-        {/* Filter Tabs */}
-        <div className="flex gap-2 mb-6">
-          {[
-            { id: "active", label: "Активные" },
-            { id: "completed", label: "Выполненные" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setFilter(tab.id as typeof filter)}
-              className={cn(
-                "px-4 py-2 rounded-xl text-sm font-medium transition-colors",
-                filter === tab.id
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-card text-muted-foreground border border-border/50"
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Goals List */}
-        <div className="space-y-3">
+        {/* Goals List - улучшенный spacing */}
+        <div className="space-y-2 sm:space-y-3">
           {filteredGoals.length > 0 ? (
             filteredGoals.map((goal) => (
               <GoalCard
@@ -779,21 +635,21 @@ const Goals = () => {
           )}
         </div>
 
-        {/* Smart Templates Button */}
+        {/* Smart Templates Button - упрощённый */}
         {filteredGoals.length > 0 && (
-          <div className="mt-6 space-y-3">
+          <div className="mt-4 sm:mt-6">
             <button
               onClick={() => setTemplatesOpen(true)}
-              className="w-full bg-card rounded-2xl p-4 border border-border/50 hover:border-primary/30 transition-all flex items-center gap-4 card-hover"
+              className="w-full bg-card/50 rounded-xl p-3 sm:p-4 border border-border/30 hover:border-primary/30 hover:bg-card transition-all flex items-center gap-3 sm:gap-4"
             >
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white flex-shrink-0">
-                <Sparkles className="w-6 h-6" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white flex-shrink-0">
+                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <div className="flex-1 text-left">
-                <h3 className="font-semibold text-foreground">Умные предложения</h3>
-                <p className="text-sm text-muted-foreground">Готовые шаблоны целей</p>
+              <div className="flex-1 text-left min-w-0">
+                <h3 className="font-medium text-sm sm:text-base text-foreground truncate">Умные предложения</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Готовые шаблоны целей</p>
               </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground flex-shrink-0" />
             </button>
           </div>
         )}
