@@ -264,33 +264,34 @@ export const CreateGoalDialog = ({ open, onOpenChange, onGoalCreated, children }
       } else {
         // Создание новой цели
         await spiritualPathAPI.createGoal({
-        title: finalTitle,
-        description: description || selectedItemData?.translation || undefined,
-        category: category as GoalCategory,
-        knowledge_subcategory: category === "knowledge" ? (knowledgeSubcategory as KnowledgeSubcategory) : undefined,
-        type,
-        period,
-        metric,
-        target_value: targetValue,
-        current_value: 0,
-        start_date: startDate,
-        end_date: finalEndDate,
-        linked_counter_type: linkedCounterType || undefined,
-        status: "active",
-        daily_plan: dailyPlan || undefined,
-        // Сохраняем данные элемента
-        item_id: selectedItemId || undefined,
-        item_type: selectedItemType,
-        item_data: selectedItemData || undefined,
-        is_learning: isLearning,
-      });
+          title: finalTitle,
+          description: description || selectedItemData?.translation || undefined,
+          category: category as GoalCategory,
+          knowledge_subcategory: category === "knowledge" ? (knowledgeSubcategory as KnowledgeSubcategory) : undefined,
+          type,
+          period,
+          metric,
+          target_value: targetValue,
+          current_value: 0,
+          start_date: startDate,
+          end_date: finalEndDate,
+          linked_counter_type: linkedCounterType || undefined,
+          status: "active",
+          daily_plan: dailyPlan || undefined,
+          // Сохраняем данные элемента
+          item_id: selectedItemId || undefined,
+          item_type: selectedItemType,
+          item_data: selectedItemData || undefined,
+          is_learning: isLearning,
+        });
 
-      toast({
-        title: "Цель создана!",
-        description: dailyPlan ? `Рекомендуемый ежедневный план: ${Math.ceil(dailyPlan)}` : undefined,
-      });
+        toast({
+          title: "Цель создана!",
+          description: dailyPlan ? `Рекомендуемый ежедневный план: ${Math.ceil(dailyPlan)}` : undefined,
+        });
+      }
 
-      // Сброс формы
+      // Сброс формы (общий для редактирования и создания)
       setTitle("");
       setDescription("");
       setCategory("");

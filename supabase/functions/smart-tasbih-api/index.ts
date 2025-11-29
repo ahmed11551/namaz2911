@@ -595,16 +595,43 @@ async function handleDailyReport(req: Request, supabase: SupabaseClient, userId:
       .gte("completed_at", dateStart.toISOString())
       .lte("completed_at", dateEnd.toISOString());
 
-    // Подсчитываем общее количество зикров за день
+    // Подсчитываем общее количество зикров за день и создаем тепловую карту по часам
     const { data: logs } = await supabase
       .from("dhikr_log")
-      .select("delta")
+      .select("delta, at_ts")
       .eq("user_id", userId)
       .gte("at_ts", dateStart.toISOString())
       .lte("at_ts", dateEnd.toISOString())
       .eq("event_type", "tap");
 
     const totalDhikrCount = logs?.reduce((sum, log) => sum + (log.delta || 0), 0) || 0;
+
+    // Создаем тепловую карту активности по часам (24 часа)
+    const hourlyActivity: number[] = new Array(24).fill(0);
+    
+    if (logs && logs.length > 0) {
+      logs.forEach((log) => {
+        try {
+          // Конвертируем UTC время в локальное время пользователя
+          const logDate = new Date(log.at_ts);
+          const formatter = new Intl.DateTimeFormat("en-US", {
+            timeZone: userData.tz,
+            hour: "numeric",
+            hour12: false,
+          });
+          const hour = parseInt(formatter.format(logDate));
+          
+          if (hour >= 0 && hour < 24) {
+            hourlyActivity[hour] += Math.abs(log.delta || 0);
+          }
+        } catch (error) {
+          console.error("Error processing log timestamp:", error);
+        }
+      });
+    }
+
+    // Находим максимальное значение для нормализации
+    const maxActivity = Math.max(...hourlyActivity, 1);
 
     return new Response(
       JSON.stringify({
@@ -621,6 +648,8 @@ async function handleDailyReport(req: Request, supabase: SupabaseClient, userId:
           is_complete: false,
         },
         total_dhikr_count: totalDhikrCount,
+        hourly_activity: hourlyActivity,
+        max_activity: maxActivity,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

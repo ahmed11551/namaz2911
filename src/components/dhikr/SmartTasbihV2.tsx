@@ -36,6 +36,8 @@ import {
   Clock,
   TrendingUp,
   Zap,
+  BarChart3,
+  X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useFocusRituals } from "@/hooks/useFocusRituals";
@@ -64,6 +66,20 @@ import {
   upsertPendingTasbih,
 } from "@/lib/tasbih-storage";
 import { hapticFeedback, showTelegramNotification } from "@/lib/telegram";
+import { DailyReportView } from "./DailyReportView";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { DailyReportView } from "./DailyReportView";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface SmartTasbihV2Props {
   goalId?: string;
@@ -218,6 +234,7 @@ export const SmartTasbihV2 = ({ goalId }: SmartTasbihV2Props) => {
   const [recentEvents, setRecentEvents] = useState<
     Array<{ id: string; delta: number; timestamp: number; source: "manual" | "auto" | "bulk" }>
   >([]);
+  const [showDailyReport, setShowDailyReport] = useState(false);
   const [favoriteItemIds, setFavoriteItemIds] = useState<string[]>(() => loadFavoriteTasbihItems());
   const [manualTarget, setManualTarget] = useState(33);
   const [manualPickerOpen, setManualPickerOpen] = useState<string | null>("manual");
@@ -879,6 +896,19 @@ export const SmartTasbihV2 = ({ goalId }: SmartTasbihV2Props) => {
 
   return (
     <div className="space-y-4">
+      {/* Кнопка для открытия ежедневного отчета */}
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowDailyReport(true)}
+          className="gap-2"
+        >
+          <BarChart3 className="w-4 h-4" />
+          Ежедневный отчет
+        </Button>
+      </div>
+
       <Card className="bg-gradient-card border-primary/40 shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center justify-between text-lg">
@@ -1567,6 +1597,16 @@ export const SmartTasbihV2 = ({ goalId }: SmartTasbihV2Props) => {
           </CardContent>
         </Card>
       )}
+
+      {/* Диалог ежедневного отчета */}
+      <Dialog open={showDailyReport} onOpenChange={setShowDailyReport}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Ежедневный отчет</DialogTitle>
+          </DialogHeader>
+          <DailyReportView />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

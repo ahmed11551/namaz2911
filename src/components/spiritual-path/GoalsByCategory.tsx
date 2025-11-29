@@ -1,6 +1,6 @@
 // Компонент для отображения целей по категориям (компактный список)
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,7 @@ import {
   Plus, 
   ChevronRight,
   BookOpen,
-  Prayer,
+  CircleDot,
   Sparkles,
   Heart,
   AlertCircle,
@@ -28,7 +28,7 @@ import { useNavigate } from "react-router-dom";
 
 const CATEGORIES = [
   { id: "quran", label: "Коран", icon: BookOpen, color: "text-blue-600" },
-  { id: "prayer", label: "Намазы", icon: Prayer, color: "text-green-600" },
+  { id: "prayer", label: "Намазы", icon: CircleDot, color: "text-green-600" },
   { id: "zikr", label: "Зикры", icon: Sparkles, color: "text-purple-600" },
   { id: "sadaqa", label: "Садака", icon: Heart, color: "text-pink-600" },
   { id: "names_of_allah", label: "99 имен Аллаха", icon: Target, color: "text-yellow-600" },
@@ -69,12 +69,20 @@ export const GoalsByCategory = () => {
     setLoading(true);
     try {
       const allGoals = await spiritualPathAPI.getGoals();
-      setGoals(allGoals);
+      setGoals(Array.isArray(allGoals) ? allGoals : []);
     } catch (error) {
       console.error("Error loading goals:", error);
+      // Пытаемся загрузить из localStorage при ошибке
+      try {
+        const cachedGoals = spiritualPathAPI.getGoalsFromLocalStorage("all");
+        setGoals(Array.isArray(cachedGoals) ? cachedGoals : []);
+      } catch (e) {
+        console.warn("Error loading cached goals:", e);
+        setGoals([]);
+      }
       toast({
         title: "Ошибка",
-        description: "Не удалось загрузить цели",
+        description: "Не удалось загрузить цели. Используются сохраненные данные.",
         variant: "destructive",
       });
     } finally {
@@ -86,7 +94,31 @@ export const GoalsByCategory = () => {
     return goals.filter(g => g.category === categoryId && g.status === "active");
   };
 
-  const canAddMoreGoals = goals.filter(g => g.status === "active").length < MAX_FREE_GOALS;
+  // Проверка лимита целей с учетом тарифа
+  const [canAddMoreGoals, setCanAddMoreGoals] = useState(true);
+  
+  useEffect(() => {
+    const checkGoalLimit = async () => {
+      try {
+        const { getUserTier } = await import("@/lib/subscription");
+        const tier = await getUserTier();
+        if (tier === "muslim") {
+          const activeGoalsCount = goals.filter(g => g.status === "active").length;
+          setCanAddMoreGoals(activeGoalsCount < MAX_FREE_GOALS);
+        } else {
+          // PRO и Premium - неограниченное количество
+          setCanAddMoreGoals(true);
+        }
+      } catch (error) {
+        console.error("Error checking goal limit:", error);
+        // При ошибке разрешаем создание (лучше разрешить, чем заблокировать)
+        setCanAddMoreGoals(true);
+      }
+    };
+    
+    checkGoalLimit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [goals]);
 
   const handleCategoryClick = (categoryId: string) => {
     const categoryGoals = getGoalsByCategory(categoryId);
@@ -244,7 +276,7 @@ export const GoalsByCategory = () => {
       <Card className="bg-gradient-card border-border/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Prayer className="w-5 h-5 text-primary" />
+            <CircleDot className="w-5 h-5 text-primary" />
             Пропущенные намазы
           </CardTitle>
         </CardHeader>
