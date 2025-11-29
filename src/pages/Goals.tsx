@@ -205,7 +205,6 @@ const GoalCard = ({
           )}>
             {goal.current_value}/{goal.target_value}
           </span>
-          </span>
         </div>
       </div>
 
