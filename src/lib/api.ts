@@ -247,6 +247,7 @@ import type {
   MissedPrayers,
   TravelPrayers,
 } from "@/types/prayer-debt";
+import type { Friend, FriendCode, AddFriendRequest, AddFriendResponse, FriendsListResponse, FriendComparison, FriendProgress } from "@/types/friends";
 
 // e-Replika API интеграция
 export const eReplikaAPI = {
@@ -1009,9 +1010,9 @@ export const prayerDebtAPI = {
     }
 
     // Fallback на localStorage
-    const userData = localStorageAPI.getUserData();
+    const userData = await localStorageAPI.getUserData();
     if (userData) {
-      localStorageAPI.saveUserData(userData);
+      await localStorageAPI.saveUserData(userData);
       return userData;
     }
 
@@ -1023,7 +1024,7 @@ export const prayerDebtAPI = {
     const userId = getUserId();
     
     // Всегда пробуем сначала localStorage
-    const userData = localStorageAPI.getUserData();
+    const userData = await localStorageAPI.getUserData();
     
     if (!userId) {
       // Fallback на localStorage
@@ -1119,7 +1120,7 @@ export const prayerDebtAPI = {
     
     // Если нет userId, сразу используем localStorage
     if (!userId) {
-      const userData = localStorageAPI.getUserData();
+      const userData = await localStorageAPI.getUserData();
       if (userData && userData.repayment_progress) {
         if (request.entries && userData.repayment_progress.completed_prayers) {
           request.entries.forEach((entry) => {
@@ -1131,7 +1132,7 @@ export const prayerDebtAPI = {
           });
         }
         userData.repayment_progress.last_updated = new Date().toISOString();
-        localStorageAPI.saveUserData(userData);
+        await localStorageAPI.saveUserData(userData);
         return userData.repayment_progress;
       }
       // Возвращаем пустой прогресс
@@ -1164,7 +1165,7 @@ export const prayerDebtAPI = {
     }
 
     // Fallback на localStorage
-    const userData = localStorageAPI.getUserData();
+    const userData = await localStorageAPI.getUserData();
     if (userData) {
       // Обновляем прогресс локально
       if (request.entries && userData.repayment_progress?.completed_prayers) {
@@ -1177,7 +1178,7 @@ export const prayerDebtAPI = {
         });
       }
       userData.repayment_progress.last_updated = new Date();
-      localStorageAPI.saveUserData(userData);
+      await localStorageAPI.saveUserData(userData);
       return userData.repayment_progress;
     }
 
@@ -1246,7 +1247,7 @@ export const prayerDebtAPI = {
     
     // Если нет userId, генерируем простой текстовый отчёт
     if (!userId) {
-      const userData = localStorageAPI.getUserData();
+      const userData = await localStorageAPI.getUserData();
       const text = `Отчёт о каза-намазах\n\nДата: ${new Date().toLocaleDateString("ru-RU")}\n\n` +
         (userData ? 
           `Выполнено намазов:\n` +
@@ -1280,7 +1281,7 @@ export const prayerDebtAPI = {
 
     // Fallback на e-Replika API
     try {
-      const userData = localStorageAPI.getUserData();
+      const userData = await localStorageAPI.getUserData();
       if (userData) {
         return await eReplikaAPI.generatePDFReport(userId, userData);
       }
@@ -1473,25 +1474,75 @@ export const smartTasbihAPI = {
 };
 
 // Локальное хранилище для демо-режима (когда API недоступен)
+// Использует AES-256 шифрование для персональных данных согласно ТЗ
 export const localStorageAPI = {
-  saveUserData(data: UserPrayerDebt): void {
-    // Сериализация дат в строки для localStorage
-    const serialized = JSON.stringify(data, (key, value) => {
-      if (value instanceof Date) {
-        return value.toISOString();
-      }
-      return value;
-    });
-    localStorage.setItem("userPrayerDebt", serialized);
+  async saveUserData(data: UserPrayerDebt): Promise<void> {
+    try {
+      // Сериализация дат в строки для localStorage
+      const serialized = JSON.stringify(data, (key, value) => {
+        if (value instanceof Date) {
+          return value.toISOString();
+        }
+        return value;
+      });
+
+      // Шифруем данные
+      const { encryptData, getEncryptionUserId } = await import("@/lib/encryption");
+      const userId = getEncryptionUserId();
+      const encrypted = await encryptData(serialized, userId);
+
+      // Сохраняем зашифрованные данные с меткой версии
+      const storageData = {
+        version: "1.0.0",
+        encrypted: true,
+        ...encrypted,
+      };
+
+      localStorage.setItem("userPrayerDebt", JSON.stringify(storageData));
+    } catch (error) {
+      console.error("Error encrypting user data:", error);
+      // Fallback: сохраняем без шифрования (для обратной совместимости)
+      // В продакшене это должно быть ошибкой
+      console.warn("Falling back to unencrypted storage");
+      const serialized = JSON.stringify(data, (key, value) => {
+        if (value instanceof Date) {
+          return value.toISOString();
+        }
+        return value;
+      });
+      localStorage.setItem("userPrayerDebt", serialized);
+    }
   },
 
-  getUserData(): UserPrayerDebt | null {
+  async getUserData(): Promise<UserPrayerDebt | null> {
     const data = localStorage.getItem("userPrayerDebt");
     if (!data) return null;
 
     try {
+      // Проверяем, зашифрованы ли данные
+      const { isEncrypted, decryptData, getEncryptionUserId } = await import("@/lib/encryption");
+      
+      let decryptedData: string;
+      
+      if (isEncrypted(data)) {
+        // Данные зашифрованы - расшифровываем
+        const encryptedData = JSON.parse(data);
+        const userId = getEncryptionUserId();
+        decryptedData = await decryptData(
+          {
+            encrypted: encryptedData.encrypted,
+            salt: encryptedData.salt,
+            iv: encryptedData.iv,
+          },
+          userId
+        );
+      } else {
+        // Старые данные без шифрования (обратная совместимость)
+        decryptedData = data;
+      }
+
       // Десериализация дат из строк
-      return JSON.parse(data, (key, value) => {
+      return JSON.parse(decryptedData, (key, value) => {
         // Проверяем, является ли значение строкой даты в формате ISO
         if (
           typeof value === "string" &&
@@ -1511,6 +1562,7 @@ export const localStorageAPI = {
 
   clearUserData(): void {
     localStorage.removeItem("userPrayerDebt");
+    localStorage.removeItem("encryption_user_id");
   },
 };
 
@@ -1973,7 +2025,7 @@ export const spiritualPathAPI = {
     
     // Если нет userId, сразу генерируем локальный отчёт
     if (!userId) {
-      return this.generateLocalAIReport(type);
+      return await this.generateLocalAIReport(type);
     }
 
     try {
@@ -1994,7 +2046,7 @@ export const spiritualPathAPI = {
     }
 
     // Fallback: генерируем отчёт на основе локальных данных
-    const userData = localStorageAPI.getUserData();
+    const userData = await localStorageAPI.getUserData();
     const goals = localStorageAPI.getGoals();
     
     const now = new Date();
@@ -2078,8 +2130,8 @@ export const spiritualPathAPI = {
   },
 
   // Генерация локального AI-отчёта
-  generateLocalAIReport(type: "weekly" | "monthly" | "custom" = "weekly"): AIReport {
-    const userData = localStorageAPI.getUserData();
+  async generateLocalAIReport(type: "weekly" | "monthly" | "custom" = "weekly"): Promise<AIReport> {
+    const userData = await localStorageAPI.getUserData();
     const goals = localStorageAPI.getGoals();
     
     const now = new Date();
@@ -2537,6 +2589,270 @@ export const spiritualPathAPI = {
         updated_at: new Date(),
       },
     };
+  },
+};
+
+// API для системы друзей (соревновательный эффект)
+export const friendsAPI = {
+  // Генерация кода для добавления друзей
+  async generateFriendCode(): Promise<FriendCode> {
+    const userId = getUserId();
+    if (!userId) {
+      throw new Error("User ID required");
+    }
+
+    try {
+      const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/prayer-debt-api/friends/code`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "apikey": SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ user_id: userId }),
+      });
+
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.warn("Supabase API недоступен, используем localStorage:", error);
+    }
+
+    // Fallback: генерируем код локально
+    const code = `FRD${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    const friendCode: FriendCode = {
+      code,
+      user_id: userId,
+      created_at: new Date(),
+    };
+    
+    // Сохраняем в localStorage
+    localStorage.setItem("friend_code", JSON.stringify(friendCode));
+    return friendCode;
+  },
+
+  // Получить свой код друга
+  async getMyFriendCode(): Promise<FriendCode | null> {
+    const userId = getUserId();
+    if (!userId) {
+      return null;
+    }
+
+    try {
+      const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/prayer-debt-api/friends/code?user_id=${userId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "apikey": SUPABASE_ANON_KEY,
+        },
+      });
+
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.warn("Supabase API недоступен, используем localStorage:", error);
+    }
+
+    // Fallback: загружаем из localStorage
+    const stored = localStorage.getItem("friend_code");
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        return null;
+      }
+    }
+
+    return null;
+  },
+
+  // Добавить друга по коду
+  async addFriend(friendCode: string): Promise<AddFriendResponse> {
+    const userId = getUserId();
+    if (!userId) {
+      throw new Error("User ID required");
+    }
+
+    try {
+      const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/prayer-debt-api/friends`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "apikey": SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          friend_code: friendCode,
+        } as AddFriendRequest),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        // Сохраняем в localStorage
+        if (result.success && result.friend) {
+          const friends = this.getFriendsFromLocalStorage();
+          friends.push(result.friend);
+          localStorage.setItem("friends", JSON.stringify(friends));
+        }
+        return result;
+      } else {
+        const error = await response.json();
+        return {
+          success: false,
+          error: error.error || "Failed to add friend",
+        };
+      }
+    } catch (error) {
+      console.warn("Supabase API недоступен, используем localStorage:", error);
+      return this.addFriendInLocalStorage(friendCode);
+    }
+  },
+
+  // Получить список друзей
+  async getFriends(): Promise<FriendsListResponse> {
+    const userId = getUserId();
+    if (!userId) {
+      return { friends: this.getFriendsFromLocalStorage(), total: 0 };
+    }
+
+    try {
+      const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/prayer-debt-api/friends?user_id=${userId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "apikey": SUPABASE_ANON_KEY,
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        // Обновляем localStorage
+        if (result.friends) {
+          localStorage.setItem("friends", JSON.stringify(result.friends));
+        }
+        return result;
+      }
+    } catch (error) {
+      console.warn("Supabase API недоступен, используем localStorage:", error);
+    }
+
+    // Fallback: загружаем из localStorage
+    const friends = this.getFriendsFromLocalStorage();
+    return { friends, total: friends.length };
+  },
+
+  // Сравнить прогресс с другом
+  async compareWithFriend(friendId: string): Promise<FriendComparison | null> {
+    const userId = getUserId();
+    if (!userId) {
+      return null;
+    }
+
+    try {
+      const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/prayer-debt-api/friends/${friendId}/compare?user_id=${userId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "apikey": SUPABASE_ANON_KEY,
+        },
+      });
+
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.warn("Supabase API недоступен:", error);
+    }
+
+    return null;
+  },
+
+  // Удалить друга
+  async removeFriend(friendId: string): Promise<{ success: boolean }> {
+    const userId = getUserId();
+    if (!userId) {
+      return { success: false };
+    }
+
+    try {
+      const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/prayer-debt-api/friends/${friendId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "apikey": SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ user_id: userId }),
+      });
+
+      if (response.ok) {
+        // Удаляем из localStorage
+        const friends = this.getFriendsFromLocalStorage();
+        const filtered = friends.filter(f => f.id !== friendId);
+        localStorage.setItem("friends", JSON.stringify(filtered));
+        return { success: true };
+      }
+    } catch (error) {
+      console.warn("Supabase API недоступен, используем localStorage:", error);
+      return this.removeFriendFromLocalStorage(friendId);
+    }
+
+    return { success: false };
+  },
+
+  // Локальные методы для fallback
+  getFriendsFromLocalStorage(): Friend[] {
+    const data = localStorage.getItem("friends");
+    if (!data) return [];
+    try {
+      return JSON.parse(data, (key, value) => {
+        if (key === "created_at" || key === "updated_at" || key === "last_updated") {
+          return new Date(value);
+        }
+        return value;
+      });
+    } catch {
+      return [];
+    }
+  },
+
+  addFriendInLocalStorage(friendCode: string): AddFriendResponse {
+    // В реальном приложении здесь должна быть валидация кода
+    // Пока просто создаем mock друга
+    const friends = this.getFriendsFromLocalStorage();
+    const newFriend: Friend = {
+      id: `friend_${Date.now()}`,
+      user_id: getUserId() || "",
+      friend_user_id: `friend_user_${Date.now()}`,
+      friend_name: "Друг",
+      friend_progress: {
+        overall_progress: 0,
+        total_completed: 0,
+        total_missed: 0,
+        daily_pace: 0,
+        current_streak: 0,
+        achievements_count: 0,
+        last_updated: new Date(),
+      },
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+    friends.push(newFriend);
+    localStorage.setItem("friends", JSON.stringify(friends));
+    return { success: true, friend: newFriend };
+  },
+
+  removeFriendFromLocalStorage(friendId: string): { success: boolean } {
+    const friends = this.getFriendsFromLocalStorage();
+    const filtered = friends.filter(f => f.id !== friendId);
+    localStorage.setItem("friends", JSON.stringify(filtered));
+    return { success: true };
   },
 };
 

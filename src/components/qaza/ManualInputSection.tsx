@@ -113,13 +113,13 @@ export const ManualInputSection = () => {
         
         // Если API вернул данные, обновляем userData
         if (response && response.debt_calculation) {
-          localStorageAPI.saveUserData(response);
+          await localStorageAPI.saveUserData(response);
         } else {
-          localStorageAPI.saveUserData(userData);
+          await localStorageAPI.saveUserData(userData);
         }
       } catch (apiError) {
         console.warn("API недоступен, сохраняем локально:", apiError);
-        localStorageAPI.saveUserData(userData);
+        await localStorageAPI.saveUserData(userData);
       }
 
       // Логирование

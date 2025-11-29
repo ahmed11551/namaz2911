@@ -605,8 +605,8 @@ export const GoalsAndHabits = () => {
     });
   };
 
-  const createDefaultGoal = useCallback(() => {
-    const userData = localStorageAPI.getUserData();
+  const createDefaultGoal = useCallback(async () => {
+    const userData = await localStorageAPI.getUserData();
     if (!userData) return;
 
     const totalRemaining =
@@ -632,8 +632,8 @@ export const GoalsAndHabits = () => {
     saveGoals([defaultGoal]);
   }, [saveGoals]);
 
-  const updateGoalProgress = useCallback(() => {
-    const userData = localStorageAPI.getUserData();
+  const updateGoalProgress = useCallback(async () => {
+    const userData = await localStorageAPI.getUserData();
     if (!userData) return;
 
     const totalCompleted = Object.values(userData.repayment_progress.completed_prayers).reduce(

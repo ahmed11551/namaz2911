@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Trash2, AlertCircle, BookOpen, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { TravelPeriod } from "@/types/prayer-debt";
@@ -177,6 +177,21 @@ export const TravelPeriodsDialog = ({
             Добавьте периоды путешествий для точного расчета сафар-намазов
           </DialogDescription>
         </DialogHeader>
+
+        {/* Информация о сафаре */}
+        <Alert className="border-blue-500/30 bg-blue-500/10">
+          <Info className="h-4 w-4 text-blue-500" />
+          <AlertDescription className="text-xs space-y-2">
+            <div>
+              <strong className="text-blue-600 dark:text-blue-400">О сафаре:</strong> Согласно позиции ДУМ РФ, 
+              сафаром считается путешествие на расстояние не менее 90 км от места постоянного проживания. 
+              В период сафара путник имеет право сокращать четырёхракаатные намазы (Зухр, Аср, Иша) до двух ракаатов.
+            </div>
+            <div className="text-muted-foreground">
+              Дни сафара исключаются из расчёта долга намазов, так как в эти дни намазы совершались в сокращённом виде.
+            </div>
+          </AlertDescription>
+        </Alert>
 
         <div className="space-y-4 py-4">
           {localPeriods.length === 0 ? (

@@ -1,9 +1,9 @@
 // Компонент для поделиться и доступа друзьям (соревновательный эффект)
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Share2, Users, Trophy, TrendingUp, Loader2 } from "lucide-react";
+import { Share2, Users, Trophy, TrendingUp, Loader2, Copy, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -18,13 +18,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useUserData } from "@/hooks/useUserData";
 import { calculateAchievements, calculateProgressStats, type Achievement } from "@/lib/prayer-utils";
-
-interface Friend {
-  id: string;
-  name: string;
-  progress: number;
-  avatar?: string;
-}
+import { friendsAPI } from "@/lib/api";
+import type { Friend, FriendCode } from "@/types/friends";
 
 export const ShareAndFriends = () => {
   const { toast } = useToast();
@@ -32,6 +27,11 @@ export const ShareAndFriends = () => {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [friendsDialogOpen, setFriendsDialogOpen] = useState(false);
   const [friendCode, setFriendCode] = useState("");
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [myFriendCode, setMyFriendCode] = useState<FriendCode | null>(null);
+  const [loadingFriends, setLoadingFriends] = useState(false);
+  const [addingFriend, setAddingFriend] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
 
   // Рассчитываем достижения на основе реальных данных
   const achievements = useMemo(() => calculateAchievements(userData), [userData]);
@@ -40,12 +40,61 @@ export const ShareAndFriends = () => {
   const stats = useMemo(() => calculateProgressStats(userData), [userData]);
   const overallProgress = stats.overallProgress;
 
-  // Mock данные друзей (в будущем можно интегрировать с API)
-  const friends: Friend[] = [
-    { id: "1", name: "Ахмад", progress: 75 },
-    { id: "2", name: "Марьям", progress: 68 },
-    { id: "3", name: "Юсуф", progress: 82 },
-  ];
+  // Загружаем друзей и код при монтировании
+  useEffect(() => {
+    loadFriends();
+    loadMyFriendCode();
+  }, []);
+
+  const loadFriends = async () => {
+    setLoadingFriends(true);
+    try {
+      const response = await friendsAPI.getFriends();
+      setFriends(response.friends);
+    } catch (error) {
+      console.error("Error loading friends:", error);
+      // Используем localStorage fallback
+      const localFriends = friendsAPI.getFriendsFromLocalStorage();
+      setFriends(localFriends);
+    } finally {
+      setLoadingFriends(false);
+    }
+  };
+
+  const loadMyFriendCode = async () => {
+    try {
+      const code = await friendsAPI.getMyFriendCode();
+      if (!code) {
+        // Генерируем новый код, если его нет
+        const newCode = await friendsAPI.generateFriendCode();
+        setMyFriendCode(newCode);
+      } else {
+        setMyFriendCode(code);
+      }
+    } catch (error) {
+      console.error("Error loading friend code:", error);
+    }
+  };
+
+  const copyFriendCode = async () => {
+    if (myFriendCode?.code) {
+      try {
+        await navigator.clipboard.writeText(myFriendCode.code);
+        setCodeCopied(true);
+        toast({
+          title: "Код скопирован",
+          description: "Поделитесь этим кодом с друзьями",
+        });
+        setTimeout(() => setCodeCopied(false), 2000);
+      } catch (error) {
+        toast({
+          title: "Ошибка",
+          description: "Не удалось скопировать код",
+          variant: "destructive",
+        });
+      }
+    }
+  };
 
   const handleShare = async (achievementId?: string) => {
     try {
@@ -98,7 +147,7 @@ export const ShareAndFriends = () => {
     setShareDialogOpen(false);
   };
 
-  const handleAddFriend = () => {
+  const handleAddFriend = async () => {
     if (!friendCode.trim()) {
       toast({
         title: "Ошибка",
@@ -108,13 +157,36 @@ export const ShareAndFriends = () => {
       return;
     }
 
-    // В реальном приложении здесь будет запрос к API
-    toast({
-      title: "Друг добавлен",
-      description: "Теперь вы можете видеть прогресс друг друга",
-    });
-    setFriendCode("");
-    setFriendsDialogOpen(false);
+    setAddingFriend(true);
+    try {
+      const response = await friendsAPI.addFriend(friendCode.trim());
+      
+      if (response.success && response.friend) {
+        toast({
+          title: "Друг добавлен",
+          description: "Теперь вы можете видеть прогресс друг друга",
+        });
+        setFriendCode("");
+        setFriendsDialogOpen(false);
+        // Обновляем список друзей
+        await loadFriends();
+      } else {
+        toast({
+          title: "Ошибка",
+          description: response.error || "Не удалось добавить друга",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error adding friend:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось добавить друга. Попробуйте позже.",
+        variant: "destructive",
+      });
+    } finally {
+      setAddingFriend(false);
+    }
   };
 
   // Показываем загрузку, если данные еще не загружены
@@ -245,6 +317,35 @@ export const ShareAndFriends = () => {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
+                  {/* Мой код для поделиться */}
+                  {myFriendCode && (
+                    <div className="space-y-2 p-4 bg-secondary/50 rounded-lg border border-border/50">
+                      <Label>Мой код для друзей</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={myFriendCode.code}
+                          readOnly
+                          className="font-mono text-lg"
+                        />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={copyFriendCode}
+                          title="Скопировать код"
+                        >
+                          {codeCopied ? (
+                            <Check className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Поделитесь этим кодом, чтобы друзья могли добавить вас
+                      </p>
+                    </div>
+                  )}
+                  
                   <div className="space-y-2">
                     <Label htmlFor="friendCode">Код друга</Label>
                     <Input
@@ -252,6 +353,11 @@ export const ShareAndFriends = () => {
                       placeholder="Введите код друга"
                       value={friendCode}
                       onChange={(e) => setFriendCode(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !addingFriend) {
+                          handleAddFriend();
+                        }
+                      }}
                     />
                   </div>
                   <div className="flex gap-3">
@@ -259,11 +365,23 @@ export const ShareAndFriends = () => {
                       variant="outline"
                       onClick={() => setFriendsDialogOpen(false)}
                       className="flex-1"
+                      disabled={addingFriend}
                     >
                       Отмена
                     </Button>
-                    <Button onClick={handleAddFriend} className="flex-1 bg-primary">
-                      Добавить
+                    <Button 
+                      onClick={handleAddFriend} 
+                      className="flex-1 bg-primary"
+                      disabled={addingFriend || !friendCode.trim()}
+                    >
+                      {addingFriend ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Добавление...
+                        </>
+                      ) : (
+                        "Добавить"
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -291,33 +409,50 @@ export const ShareAndFriends = () => {
             </div>
 
             {/* Friends List */}
-            {friends.map((friend) => (
-              <div
-                key={friend.id}
-                className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 border border-border/50 hover:bg-secondary transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-                    {friend.name[0]}
-                  </div>
-                  <div>
-                    <div className="font-semibold">{friend.name}</div>
-                    <div className="text-sm text-muted-foreground">{friend.progress}% выполнено</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {friend.progress > overallProgress ? (
-                    <TrendingUp className="w-4 h-4 text-muted-foreground" />
-                  ) : null}
-                  <Badge variant="outline">{friend.progress}%</Badge>
-                </div>
+            {loadingFriends ? (
+              <div className="text-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary mb-2" />
+                <p className="text-sm text-muted-foreground">Загрузка друзей...</p>
               </div>
-            ))}
+            ) : (
+              <>
+                {friends.map((friend) => {
+                  const friendProgress = friend.friend_progress?.overall_progress || 0;
+                  return (
+                    <div
+                      key={friend.id}
+                      className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 border border-border/50 hover:bg-secondary transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
+                          {friend.friend_name?.[0] || "Д"}
+                        </div>
+                        <div>
+                          <div className="font-semibold">{friend.friend_name || "Друг"}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {friendProgress}% выполнено
+                            {friend.friend_progress?.daily_pace && (
+                              <> • {friend.friend_progress.daily_pace} намазов/день</>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {friendProgress > overallProgress ? (
+                          <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                        ) : null}
+                        <Badge variant="outline">{friendProgress}%</Badge>
+                      </div>
+                    </div>
+                  );
+                })}
 
-            {friends.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                Добавьте друзей, чтобы соревноваться
-              </div>
+                {friends.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Добавьте друзей, чтобы соревноваться
+                  </div>
+                )}
+              </>
             )}
           </div>
         </CardContent>

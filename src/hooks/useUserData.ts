@@ -32,11 +32,11 @@ export function useUserData() {
       try {
         await prayerDebtAPI.getSnapshot();
         // Если API доступен, загружаем из localStorage (который синхронизируется с API)
-        savedData = localStorageAPI.getUserData();
+        savedData = await localStorageAPI.getUserData();
       } catch (apiError) {
         // Если API недоступен, загружаем из localStorage
         console.warn("API недоступен, используем localStorage:", apiError);
-        savedData = localStorageAPI.getUserData();
+        savedData = await localStorageAPI.getUserData();
       }
 
       // Проверяем, что компонент еще смонтирован
@@ -91,7 +91,7 @@ export function useUserData() {
       
       // Пытаемся загрузить из localStorage как fallback
       try {
-        const fallbackData = localStorageAPI.getUserData();
+        const fallbackData = await localStorageAPI.getUserData();
         if (fallbackData && isMountedRef.current) {
           setUserData(fallbackData);
           setError(null); // Очищаем ошибку, если fallback успешен
@@ -106,9 +106,9 @@ export function useUserData() {
     }
   }, []);
 
-  const refreshData = useCallback(() => {
+  const refreshData = useCallback(async () => {
     try {
-      const savedData = localStorageAPI.getUserData();
+      const savedData = await localStorageAPI.getUserData();
       if (savedData && isMountedRef.current) {
         setUserData(savedData);
         setError(null);

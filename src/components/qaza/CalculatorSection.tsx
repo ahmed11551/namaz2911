@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calculator, User, Plane, AlertCircle, CheckSquare, ChevronRight } from "lucide-react";
+import { Calculator, User, Plane, AlertCircle, CheckSquare, ChevronRight, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { calculateBulughDate, calculatePrayerDebt, validateCalculationData } from "@/lib/prayer-calculator";
 import { prayerDebtAPI, localStorageAPI } from "@/lib/api";
@@ -116,9 +116,9 @@ export const CalculatorSection = () => {
           women_data: womenData,
           travel_data: travelData,
         });
-        localStorageAPI.saveUserData(response || userData);
+        await localStorageAPI.saveUserData(response || userData);
       } catch {
-        localStorageAPI.saveUserData(userData);
+        await localStorageAPI.saveUserData(userData);
       }
 
       logCalculation(telegramUserId || userData.user_id, null, debtCalculation);
@@ -355,6 +355,37 @@ export const CalculatorSection = () => {
           <h3 className="font-semibold text-foreground">Путешествия (сафар)</h3>
         </div>
 
+        {/* Информация о сафаре и позиции ДУМ */}
+        <div className="mb-4 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <BookOpen className="w-4 h-4 text-blue-500" />
+            </div>
+            <div className="flex-1 space-y-2">
+              <h4 className="text-sm font-semibold text-foreground">О сафаре (путешествии)</h4>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                <strong>Сафар</strong> — это путешествие, при котором путник имеет право сокращать четырёхракаатные намазы 
+                (Зухр, Аср, Иша) до двух ракаатов. Согласно ханафитскому мазхабу, минимальное расстояние для сафара составляет 
+                около 90-100 км от места постоянного проживания.
+              </p>
+              <div className="mt-3 pt-3 border-t border-blue-500/20">
+                <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">
+                  📋 Позиция ДУМ РФ по сафару:
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Согласно официальной позиции Духовного управления мусульман Российской Федерации, сафаром считается 
+                  путешествие на расстояние не менее 90 км от места постоянного проживания. В период сафара путник 
+                  имеет право сокращать четырёхракаатные намазы (Зухр, Аср, Иша) до двух ракаатов. Дни сафара исключаются 
+                  из расчёта долга намазов, так как в эти дни намазы совершались в сокращённом виде.
+                </p>
+                <p className="text-xs text-muted-foreground mt-2 italic">
+                  *Расчёт выполнен по методике ханафитского мазхаба согласно позиции ДУМ РФ.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="space-y-4">
           <div>
             <Label className="text-sm text-muted-foreground">Общее количество дней в пути</Label>
@@ -365,6 +396,9 @@ export const CalculatorSection = () => {
               min={0}
               className="mt-1 h-12 rounded-xl bg-secondary border-border/50"
             />
+            <p className="text-xs text-muted-foreground mt-1.5">
+              Укажите общее количество дней, проведённых в путешествиях (сафар)
+            </p>
           </div>
 
           <TravelPeriodsDialog

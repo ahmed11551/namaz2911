@@ -71,8 +71,8 @@ export const PrayerCalendar = () => {
     setEntries(updatedEntries);
   };
 
-  const loadUserData = useCallback(() => {
-    const data = localStorageAPI.getUserData();
+  const loadUserData = useCallback(async () => {
+    const data = await localStorageAPI.getUserData();
     if (data) {
       setUserData(data);
     } else if (userDataFromHook) {
@@ -121,7 +121,7 @@ export const PrayerCalendar = () => {
         userData.repayment_progress.completed_prayers[prayerKey] = 
           (userData.repayment_progress.completed_prayers[prayerKey] || 0) + count;
         userData.repayment_progress.last_updated = new Date();
-        localStorageAPI.saveUserData(userData);
+        await localStorageAPI.saveUserData(userData);
         setUserData(userData);
       }
 

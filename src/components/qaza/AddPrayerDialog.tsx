@@ -70,7 +70,7 @@ export const AddPrayerDialog = ({ open, onOpenChange, onUpdate }: AddPrayerDialo
         }));
 
       // Получаем данные до обновления для AuditLog
-      const userDataBefore = localStorageAPI.getUserData();
+      const userDataBefore = await localStorageAPI.getUserData();
       const beforeProgress = userDataBefore?.repayment_progress.completed_prayers;
 
       // Попытка обновить через API
@@ -78,7 +78,7 @@ export const AddPrayerDialog = ({ open, onOpenChange, onUpdate }: AddPrayerDialo
         await prayerDebtAPI.updateProgress({ entries });
       } catch (apiError) {
         // Если API недоступен, обновляем localStorage
-        const userData = localStorageAPI.getUserData();
+        const userData = await localStorageAPI.getUserData();
         if (userData) {
           userData.repayment_progress.completed_prayers.fajr += counts.fajr;
           userData.repayment_progress.completed_prayers.dhuhr += counts.dhuhr;
@@ -87,7 +87,7 @@ export const AddPrayerDialog = ({ open, onOpenChange, onUpdate }: AddPrayerDialo
           userData.repayment_progress.completed_prayers.isha += counts.isha;
           userData.repayment_progress.completed_prayers.witr += counts.witr;
           userData.repayment_progress.last_updated = new Date();
-          localStorageAPI.saveUserData(userData);
+          await localStorageAPI.saveUserData(userData);
 
           // Логирование в AuditLog
           const userId = getTelegramUserId() || userData.user_id;
@@ -105,7 +105,7 @@ export const AddPrayerDialog = ({ open, onOpenChange, onUpdate }: AddPrayerDialo
       // Синхронизируем прогресс с целями
       try {
         const { syncQazaProgressWithGoals } = await import("@/lib/qaza-goals-sync");
-        const userDataAfter = localStorageAPI.getUserData();
+        const userDataAfter = await localStorageAPI.getUserData();
         const userId = getTelegramUserId() || userDataAfter?.user_id || "";
         await syncQazaProgressWithGoals(userDataAfter, userId);
       } catch (error) {
