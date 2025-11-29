@@ -437,12 +437,13 @@ export const eReplikaAPI = {
       const response = await fetch(`${API_BASE_URL}/duas`, {
         method: "GET",
         headers: getAuthHeaders(),
+        signal: AbortSignal.timeout(5000), // Таймаут 5 секунд
       });
 
       if (!response.ok) {
-        if (response.status === 404) {
-          console.warn("Duas endpoint not found");
-          return [];
+        if (response.status === 404 || response.status === 401) {
+          console.warn("Duas endpoint not available, using local data");
+          return []; // Вернём пустой массив, fallback сработает в dhikr-data.ts
         }
         throw new Error(`Failed to fetch duas: ${response.statusText}`);
       }
@@ -458,19 +459,34 @@ export const eReplikaAPI = {
         duas = data.data as RawDuaRecord[];
       }
 
-      return duas.map((dua: RawDuaRecord) => ({
-        id: dua.id || dua.dua_id || dua._id,
-        arabic: dua.arabic || dua.text_arabic || dua.arabic_text || "",
-        transcription: dua.transcription || dua.translit || dua.latin_transcription || "",
-        russianTranscription: dua.russian_transcription || dua.russianTranscription || dua.cyrillic_transcription || "",
-        translation: dua.translation || dua.meaning || dua.text || "",
-        reference: dua.reference || dua.source || "",
-        audioUrl: dua.audio_url || dua.audioUrl || dua.audio || null,
-        category: dua.category || dua.category_id || "",
-      }));
-    } catch (error) {
-      console.error("Error fetching duas:", error);
+      // Если API вернул данные, возвращаем их
+      if (duas.length > 0) {
+        return duas.map((dua: RawDuaRecord) => ({
+          id: dua.id || dua.dua_id || dua._id,
+          arabic: dua.arabic || dua.text_arabic || dua.arabic_text || "",
+          transcription: dua.transcription || dua.translit || dua.latin_transcription || "",
+          russianTranscription: dua.russian_transcription || dua.russianTranscription || dua.cyrillic_transcription || "",
+          translation: dua.translation || dua.meaning || dua.text || "",
+          reference: dua.reference || dua.source || "",
+          audioUrl: dua.audio_url || dua.audioUrl || dua.audio || null,
+          category: dua.category || dua.category_id || "",
+        }));
+      }
+
+      // Если пустой массив, fallback сработает
       return [];
+    } catch (error) {
+      // Обрабатываем таймауты и сетевые ошибки
+      if (error instanceof Error) {
+        if (error.name === "AbortError" || error.message.includes("timeout")) {
+          console.warn("Duas API timeout, using local data");
+        } else if (error.message.includes("fetch") || error.message.includes("network")) {
+          console.warn("Duas API network error, using local data");
+        } else {
+          console.error("Error fetching duas:", error);
+        }
+      }
+      return []; // Fallback на локальные данные в dhikr-data.ts
     }
   },
 
@@ -549,11 +565,12 @@ export const eReplikaAPI = {
       const response = await fetch(`${API_BASE_URL}/adhkar`, {
         method: "GET",
         headers: getAuthHeaders(),
+        signal: AbortSignal.timeout(5000),
       });
 
       if (!response.ok) {
-        if (response.status === 404) {
-          console.warn("Adhkar endpoint not found");
+        if (response.status === 404 || response.status === 401) {
+          console.warn("Adhkar endpoint not available, using local data");
           return [];
         }
         throw new Error(`Failed to fetch adhkar: ${response.statusText}`);
@@ -569,19 +586,31 @@ export const eReplikaAPI = {
         adhkar = data.data as RawAdhkarRecord[];
       }
 
-      return adhkar.map((item: RawAdhkarRecord) => ({
-        id: item.id || item.adhkar_id || item._id,
-        title: item.title || item.name || "",
-        arabic: item.arabic || item.text_arabic || item.arabic_text || "",
-        transcription: item.transcription || item.translit || item.latin_transcription || "",
-        russianTranscription: item.russian_transcription || item.russianTranscription || item.cyrillic_transcription || "",
-        translation: item.translation || item.meaning || item.text || "",
-        count: item.count || item.recommended_count || 33,
-        category: item.category || item.category_id || "",
-        audioUrl: item.audio_url || item.audioUrl || item.audio || null,
-      }));
+      if (adhkar.length > 0) {
+        return adhkar.map((item: RawAdhkarRecord) => ({
+          id: item.id || item.adhkar_id || item._id,
+          title: item.title || item.name || "",
+          arabic: item.arabic || item.text_arabic || item.arabic_text || "",
+          transcription: item.transcription || item.translit || item.latin_transcription || "",
+          russianTranscription: item.russian_transcription || item.russianTranscription || item.cyrillic_transcription || "",
+          translation: item.translation || item.meaning || item.text || "",
+          count: item.count || item.recommended_count || 33,
+          category: item.category || item.category_id || "",
+          audioUrl: item.audio_url || item.audioUrl || item.audio || null,
+        }));
+      }
+
+      return [];
     } catch (error) {
-      console.error("Error fetching adhkar:", error);
+      if (error instanceof Error) {
+        if (error.name === "AbortError" || error.message.includes("timeout")) {
+          console.warn("Adhkar API timeout, using local data");
+        } else if (error.message.includes("fetch") || error.message.includes("network")) {
+          console.warn("Adhkar API network error, using local data");
+        } else {
+          console.error("Error fetching adhkar:", error);
+        }
+      }
       return [];
     }
   },
@@ -600,11 +629,12 @@ export const eReplikaAPI = {
       const response = await fetch(`${API_BASE_URL}/salawat`, {
         method: "GET",
         headers: getAuthHeaders(),
+        signal: AbortSignal.timeout(5000),
       });
 
       if (!response.ok) {
-        if (response.status === 404) {
-          console.warn("Salawat endpoint not found");
+        if (response.status === 404 || response.status === 401) {
+          console.warn("Salawat endpoint not available, using local data");
           return [];
         }
         throw new Error(`Failed to fetch salawat: ${response.statusText}`);
@@ -620,17 +650,29 @@ export const eReplikaAPI = {
         salawat = data.data as RawAdhkarRecord[];
       }
 
-      return salawat.map((item: RawAdhkarRecord) => ({
-        id: item.id || item.salawat_id || item._id,
-        arabic: item.arabic || item.text_arabic || item.arabic_text || "",
-        transcription: item.transcription || item.translit || item.latin_transcription || "",
-        russianTranscription: item.russian_transcription || item.russianTranscription || item.cyrillic_transcription || "",
-        translation: item.translation || item.meaning || item.text || "",
-        reference: item.reference || item.source || "",
-        audioUrl: item.audio_url || item.audioUrl || item.audio || null,
-      }));
+      if (salawat.length > 0) {
+        return salawat.map((item: RawAdhkarRecord) => ({
+          id: item.id || item.salawat_id || item._id,
+          arabic: item.arabic || item.text_arabic || item.arabic_text || "",
+          transcription: item.transcription || item.translit || item.latin_transcription || "",
+          russianTranscription: item.russian_transcription || item.russianTranscription || item.cyrillic_transcription || "",
+          translation: item.translation || item.meaning || item.text || "",
+          reference: item.reference || item.source || "",
+          audioUrl: item.audio_url || item.audioUrl || item.audio || null,
+        }));
+      }
+
+      return [];
     } catch (error) {
-      console.error("Error fetching salawat:", error);
+      if (error instanceof Error) {
+        if (error.name === "AbortError" || error.message.includes("timeout")) {
+          console.warn("Salawat API timeout, using local data");
+        } else if (error.message.includes("fetch") || error.message.includes("network")) {
+          console.warn("Salawat API network error, using local data");
+        } else {
+          console.error("Error fetching salawat:", error);
+        }
+      }
       return [];
     }
   },
@@ -649,11 +691,12 @@ export const eReplikaAPI = {
       const response = await fetch(`${API_BASE_URL}/kalimas`, {
         method: "GET",
         headers: getAuthHeaders(),
+        signal: AbortSignal.timeout(5000),
       });
 
       if (!response.ok) {
-        if (response.status === 404) {
-          console.warn("Kalimas endpoint not found");
+        if (response.status === 404 || response.status === 401) {
+          console.warn("Kalimas endpoint not available, using local data");
           return [];
         }
         throw new Error(`Failed to fetch kalimas: ${response.statusText}`);
@@ -669,17 +712,29 @@ export const eReplikaAPI = {
         kalimas = data.data as RawAdhkarRecord[];
       }
 
-      return kalimas.map((item: RawAdhkarRecord) => ({
-        id: item.id || item.kalima_id || item._id,
-        arabic: item.arabic || item.text_arabic || item.arabic_text || "",
-        transcription: item.transcription || item.translit || item.latin_transcription || "",
-        russianTranscription: item.russian_transcription || item.russianTranscription || item.cyrillic_transcription || "",
-        translation: item.translation || item.meaning || item.text || "",
-        reference: item.reference || item.source || "",
-        audioUrl: item.audio_url || item.audioUrl || item.audio || null,
-      }));
+      if (kalimas.length > 0) {
+        return kalimas.map((item: RawAdhkarRecord) => ({
+          id: item.id || item.kalima_id || item._id,
+          arabic: item.arabic || item.text_arabic || item.arabic_text || "",
+          transcription: item.transcription || item.translit || item.latin_transcription || "",
+          russianTranscription: item.russian_transcription || item.russianTranscription || item.cyrillic_transcription || "",
+          translation: item.translation || item.meaning || item.text || "",
+          reference: item.reference || item.source || "",
+          audioUrl: item.audio_url || item.audioUrl || item.audio || null,
+        }));
+      }
+
+      return [];
     } catch (error) {
-      console.error("Error fetching kalimas:", error);
+      if (error instanceof Error) {
+        if (error.name === "AbortError" || error.message.includes("timeout")) {
+          console.warn("Kalimas API timeout, using local data");
+        } else if (error.message.includes("fetch") || error.message.includes("network")) {
+          console.warn("Kalimas API network error, using local data");
+        } else {
+          console.error("Error fetching kalimas:", error);
+        }
+      }
       return [];
     }
   },
@@ -1742,8 +1797,10 @@ export const spiritualPathAPI = {
   // Группы
   async getGroups(): Promise<GoalGroup[]> {
     const userId = getUserId();
+    
+    // Если нет userId, используем localStorage
     if (!userId) {
-      return [];
+      return this.getGroupsFromLocalStorage();
     }
 
     try {
@@ -1757,30 +1814,27 @@ export const spiritualPathAPI = {
       });
 
       if (response.ok) {
-        return await response.json();
+        const groups = await response.json();
+        // Сохраняем в localStorage для офлайн доступа
+        if (groups && groups.length > 0) {
+          localStorage.setItem("spiritual_path_groups", JSON.stringify(groups));
+        }
+        return groups;
       }
     } catch (error) {
-      console.warn("Supabase API недоступен:", error);
+      console.warn("Supabase API недоступен, используем localStorage:", error);
     }
 
-    return [];
+    // Fallback на localStorage
+    return this.getGroupsFromLocalStorage();
   },
 
   async createGroup(name: string, goalId: string): Promise<GoalGroup> {
     const userId = getUserId();
     
-    // Группы требуют онлайн-подключения, возвращаем локальную группу
+    // Если нет userId, создаём локальную группу
     if (!userId) {
-      const localGroup: GoalGroup = {
-        id: `local_group_${Date.now()}`,
-        name,
-        goal_id: goalId,
-        created_by: `local_${Date.now()}`,
-        invite_code: `LOCAL${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-        members: [],
-        created_at: new Date(),
-      };
-      return localGroup;
+      return this.createGroupInLocalStorage(name, goalId);
     }
 
     try {
@@ -1795,32 +1849,27 @@ export const spiritualPathAPI = {
       });
 
       if (response.ok) {
-        return await response.json();
+        const group = await response.json();
+        // Сохраняем в localStorage
+        const groups = this.getGroupsFromLocalStorage();
+        groups.push(group);
+        localStorage.setItem("spiritual_path_groups", JSON.stringify(groups));
+        return group;
       }
     } catch (error) {
-      console.warn("Supabase API недоступен:", error);
+      console.warn("Supabase API недоступен, используем localStorage:", error);
     }
 
-    throw new Error("Failed to create group");
+    // Fallback на localStorage
+    return this.createGroupInLocalStorage(name, goalId);
   },
 
   async joinGroup(groupIdOrCode: string): Promise<{ success: boolean; group: GoalGroup }> {
     const userId = getUserId();
     
-    // Присоединение к группе требует онлайн
+    // Если нет userId, пробуем найти группу локально
     if (!userId) {
-      return {
-        success: false,
-        group: {
-          id: groupIdOrCode,
-          name: "Группа недоступна",
-          goal_id: "",
-          created_by: "",
-          invite_code: groupIdOrCode,
-          members: [],
-          created_at: new Date(),
-        },
-      };
+      return this.joinGroupInLocalStorage(groupIdOrCode);
     }
 
     try {
@@ -1835,13 +1884,26 @@ export const spiritualPathAPI = {
       });
 
       if (response.ok) {
-        return await response.json();
+        const result = await response.json();
+        // Обновляем localStorage
+        if (result.success && result.group) {
+          const groups = this.getGroupsFromLocalStorage();
+          const existingIndex = groups.findIndex(g => g.id === result.group.id);
+          if (existingIndex >= 0) {
+            groups[existingIndex] = result.group;
+          } else {
+            groups.push(result.group);
+          }
+          localStorage.setItem("spiritual_path_groups", JSON.stringify(groups));
+        }
+        return result;
       }
     } catch (error) {
-      console.warn("Supabase API недоступен:", error);
+      console.warn("Supabase API недоступен, используем localStorage:", error);
     }
 
-    throw new Error("Failed to join group");
+    // Fallback на localStorage
+    return this.joinGroupInLocalStorage(groupIdOrCode);
   },
 
   // AI-отчеты
@@ -2354,6 +2416,66 @@ export const spiritualPathAPI = {
     }
 
     return progress;
+  },
+
+  // LocalStorage методы для групп
+  getGroupsFromLocalStorage(): GoalGroup[] {
+    const data = localStorage.getItem("spiritual_path_groups");
+    if (!data) return [];
+    try {
+      return JSON.parse(data, (key, value) => {
+        if (key === "created_at" || key === "updated_at") {
+          return new Date(value);
+        }
+        return value;
+      });
+    } catch {
+      return [];
+    }
+  },
+
+  createGroupInLocalStorage(name: string, goalId: string): GoalGroup {
+    const userId = getUserId() || `local_${Date.now()}`;
+    const newGroup: GoalGroup = {
+      id: `group_${Date.now()}`,
+      name,
+      goal_id: goalId,
+      created_by: userId,
+      invite_code: `LOCAL${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+    const groups = this.getGroupsFromLocalStorage();
+    groups.push(newGroup);
+    localStorage.setItem("spiritual_path_groups", JSON.stringify(groups));
+    return newGroup;
+  },
+
+  joinGroupInLocalStorage(groupIdOrCode: string): { success: boolean; group: GoalGroup } {
+    const groups = this.getGroupsFromLocalStorage();
+    const group = groups.find(
+      g => g.id === groupIdOrCode || g.invite_code === groupIdOrCode
+    );
+    
+    if (group) {
+      return {
+        success: true,
+        group,
+      };
+    }
+    
+    return {
+      success: false,
+      group: {
+        id: groupIdOrCode,
+        name: "Группа не найдена",
+        goal_id: "",
+        created_by: "",
+        invite_code: groupIdOrCode,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    };
   },
 };
 

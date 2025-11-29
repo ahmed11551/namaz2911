@@ -60,11 +60,26 @@ const persistSubscription = (subscription: PushSubscriptionJSON | null) => {
 
 export const enableBackgroundNotifications = async () => {
   if (!isPushSupported()) {
-    throw new Error("Фоновые уведомления не поддерживаются на этом устройстве");
+    // Fallback: используем обычные уведомления браузера
+    if ("Notification" in window) {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        console.log("Push не поддерживается, но уведомления браузера включены");
+        return null; // Возвращаем null, но уведомления работают
+      }
+    }
+    throw new Error("Уведомления не поддерживаются на этом устройстве");
   }
 
+  // Если VAPID ключ не настроен, используем только локальные уведомления
   if (!VAPID_PUBLIC_KEY) {
-    throw new Error("VAPID ключ не настроен. Укажите VITE_VAPID_PUBLIC_KEY в .env");
+    console.warn("VAPID ключ не настроен, используем только локальные уведомления");
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      persistSubscription({ local_only: true } as unknown as PushSubscriptionJSON);
+      return null;
+    }
+    throw new Error("Разрешите уведомления в браузере");
   }
 
   let permission = Notification.permission;
@@ -80,10 +95,16 @@ export const enableBackgroundNotifications = async () => {
   let subscription = await registration.pushManager.getSubscription();
 
   if (!subscription) {
-    subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-    });
+    try {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+    } catch (error) {
+      console.warn("Не удалось подписаться на push, используем локальные уведомления:", error);
+      persistSubscription({ local_only: true } as unknown as PushSubscriptionJSON);
+      return null;
+    }
   }
 
   const payload = {
@@ -92,7 +113,13 @@ export const enableBackgroundNotifications = async () => {
     subscribed_at: new Date().toISOString(),
   };
 
-  await spiritualPathAPI.registerPushSubscription(payload);
+  try {
+    await spiritualPathAPI.registerPushSubscription(payload);
+  } catch (error) {
+    console.warn("Не удалось зарегистрировать push на сервере, используем локальные уведомления:", error);
+    // Продолжаем работу с локальными уведомлениями
+  }
+  
   persistSubscription(subscription.toJSON());
   return subscription;
 };
@@ -117,25 +144,53 @@ export const disableBackgroundNotifications = async () => {
   persistSubscription(null);
 };
 
-export const sendLocalNotification = async (title: string, body: string) => {
-  if (!isPushSupported()) {
+export const sendLocalNotification = async (title: string, body: string, options?: NotificationOptions) => {
+  // Проверяем разрешение
+  if (!("Notification" in window)) {
+    console.warn("Уведомления не поддерживаются");
     return;
   }
-  const registration = await getServiceWorkerRegistration();
 
-  if (registration.active) {
-    registration.active.postMessage({
-      type: "LOCAL_NOTIFICATION",
-      payload: {
-        title,
-        body,
-      },
-    });
-  } else {
+  if (Notification.permission !== "granted") {
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      console.warn("Разрешение на уведомления не получено");
+      return;
+    }
+  }
+
+  // Пробуем через Service Worker
+  if (isPushSupported()) {
+    try {
+      const registration = await getServiceWorkerRegistration();
+      if (registration.active) {
+        registration.active.postMessage({
+          type: "LOCAL_NOTIFICATION",
+          payload: {
+            title,
+            body,
+            ...options,
+          },
+        });
+        return;
+      }
+    } catch (error) {
+      console.warn("Service Worker недоступен, используем обычные уведомления:", error);
+    }
+  }
+
+  // Fallback: обычные уведомления браузера
+  try {
     new Notification(title, {
       body,
       icon: "/logo.svg",
+      badge: "/logo.svg",
+      tag: "namaz-notification",
+      requireInteraction: false,
+      ...options,
     });
+  } catch (error) {
+    console.error("Ошибка при отправке уведомления:", error);
   }
 };
 
