@@ -39,6 +39,7 @@ import { useUserData } from "@/hooks/useUserData";
 import { useNavigate } from "react-router-dom";
 import type { Goal, Badge, Streak } from "@/types/spiritual-path";
 import { useToast } from "@/hooks/use-toast";
+import { hapticFeedback } from "@/lib/haptics";
 import {
   Dialog,
   DialogContent,
@@ -123,14 +124,33 @@ const Profile = () => {
   const [languageDialogOpen, setLanguageDialogOpen] = useState(false);
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
 
-  // Применяем тему при изменении
+  // Применяем тему при изменении и при загрузке
   useEffect(() => {
+    const root = document.documentElement;
     if (settings.darkTheme) {
-      document.documentElement.classList.add("dark");
+      root.classList.add("dark");
+      root.classList.remove("light");
     } else {
-      document.documentElement.classList.remove("dark");
+      root.classList.remove("dark");
+      root.classList.add("light");
     }
+    // Сохраняем в data-атрибут для других компонентов
+    root.setAttribute("data-theme", settings.darkTheme ? "dark" : "light");
   }, [settings.darkTheme]);
+
+  // Применяем тему при первой загрузке
+  useEffect(() => {
+    const root = document.documentElement;
+    const savedSettings = loadSettings();
+    if (savedSettings.darkTheme) {
+      root.classList.add("dark");
+      root.classList.remove("light");
+    } else {
+      root.classList.remove("dark");
+      root.classList.add("light");
+    }
+    root.setAttribute("data-theme", savedSettings.darkTheme ? "dark" : "light");
+  }, []);
 
   // Обновление настроек
   const updateSetting = useCallback(<K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
@@ -143,23 +163,33 @@ const Profile = () => {
 
   // Переключение уведомлений
   const toggleNotifications = async () => {
+    hapticFeedback.light();
     if (!settings.notifications) {
       // Включаем уведомления
       if ("Notification" in window) {
         const permission = await Notification.requestPermission();
         if (permission === "granted") {
           updateSetting("notifications", true);
+          hapticFeedback.success();
           toast({
             title: "Уведомления включены",
             description: "Вы будете получать напоминания о намазах",
           });
         } else {
+          hapticFeedback.error();
           toast({
             title: "Разрешение отклонено",
             description: "Разрешите уведомления в настройках браузера",
             variant: "destructive",
           });
         }
+      } else {
+        updateSetting("notifications", true);
+        hapticFeedback.success();
+        toast({
+          title: "Уведомления включены",
+          description: "Уведомления будут работать при поддержке браузера",
+        });
       }
     } else {
       updateSetting("notifications", false);
@@ -171,31 +201,51 @@ const Profile = () => {
 
   // Переключение темы
   const toggleTheme = () => {
-    updateSetting("darkTheme", !settings.darkTheme);
+    hapticFeedback.medium();
+    const newTheme = !settings.darkTheme;
+    updateSetting("darkTheme", newTheme);
     toast({
-      title: settings.darkTheme ? "Светлая тема" : "Тёмная тема",
-      description: settings.darkTheme ? "Включена светлая тема" : "Включена тёмная тема",
+      title: newTheme ? "Тёмная тема" : "Светлая тема",
+      description: newTheme ? "Включена тёмная тема" : "Включена светлая тема",
     });
   };
 
   // Переключение звуков
   const toggleSounds = () => {
-    updateSetting("sounds", !settings.sounds);
-    if (!settings.sounds) {
+    hapticFeedback.light();
+    const newSounds = !settings.sounds;
+    updateSetting("sounds", newSounds);
+    if (newSounds) {
       // Воспроизводим тестовый звук при включении
       try {
         const audio = new Audio("/sounds/tap.mp3");
         audio.volume = 0.3;
         audio.play().catch(() => {});
-      } catch (e) {}
+      } catch (e) {
+        // Fallback: используем Web Audio API для генерации звука
+        try {
+          const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          oscillator.frequency.value = 800;
+          oscillator.type = "sine";
+          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.1);
+        } catch (e2) {}
+      }
     }
     toast({
-      title: settings.sounds ? "Звуки отключены" : "Звуки включены",
+      title: newSounds ? "Звуки включены" : "Звуки отключены",
     });
   };
 
   // Смена языка
   const changeLanguage = (lang: "ru" | "en" | "ar") => {
+    hapticFeedback.medium();
     updateSetting("language", lang);
     setLanguageDialogOpen(false);
     toast({
@@ -473,20 +523,27 @@ const Profile = () => {
               {section.items.map((item, i) => (
                 <button
                   key={i}
-                  onClick={item.action}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (item.action) {
+                      item.action();
+                    }
+                  }}
                   className={cn(
-                    "w-full flex items-center gap-4 px-4 py-3.5 hover:bg-secondary/50 transition-colors",
+                    "w-full flex items-center gap-4 px-4 py-4 min-h-[56px] hover:bg-secondary/50 active:bg-secondary/70 transition-all interactive haptic-light",
                     i !== section.items.length - 1 && "border-b border-border/30"
                   )}
+                  aria-label={item.label}
                 >
-                  <div className={cn("w-9 h-9 rounded-xl bg-secondary flex items-center justify-center", item.color)}>
+                  <div className={cn("w-10 h-10 rounded-xl bg-secondary flex items-center justify-center shrink-0", item.color)}>
                     <item.icon className="w-5 h-5" />
                   </div>
-                  <span className="flex-1 text-left text-foreground font-medium">{item.label}</span>
+                  <span className="flex-1 text-left text-foreground font-medium text-base">{item.label}</span>
                   {item.value && (
-                    <span className="text-sm text-muted-foreground">{item.value}</span>
+                    <span className="text-sm text-muted-foreground font-medium">{item.value}</span>
                   )}
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" />
                 </button>
               ))}
             </div>
@@ -513,18 +570,23 @@ const Profile = () => {
             {LANGUAGES.map((lang) => (
               <button
                 key={lang.code}
-                onClick={() => changeLanguage(lang.code)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  changeLanguage(lang.code);
+                }}
                 className={cn(
-                  "w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors",
+                  "w-full flex items-center gap-4 px-4 py-4 min-h-[56px] rounded-xl transition-all interactive haptic-light",
                   settings.language === lang.code
                     ? "bg-primary/20 border-2 border-primary"
-                    : "bg-secondary hover:bg-secondary/80 border-2 border-transparent"
+                    : "bg-secondary hover:bg-secondary/80 active:bg-secondary/90 border-2 border-transparent"
                 )}
+                aria-label={`Выбрать язык: ${lang.name}`}
               >
                 <span className="text-2xl">{lang.flag}</span>
-                <span className="flex-1 text-left font-medium">{lang.name}</span>
+                <span className="flex-1 text-left font-medium text-base">{lang.name}</span>
                 {settings.language === lang.code && (
-                  <Check className="w-5 h-5 text-primary" />
+                  <Check className="w-5 h-5 text-primary shrink-0" />
                 )}
               </button>
             ))}
