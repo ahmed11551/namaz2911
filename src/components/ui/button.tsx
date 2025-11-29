@@ -39,18 +39,22 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, children, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
+    
+    // Обработка children для предотвращения переполнения текста
+    const processedChildren = React.Children.map(children, (child) => {
+      if (typeof child === 'string') {
+        return <span className="truncate">{child}</span>;
+      }
+      return child;
+    }) || children;
+    
     return (
       <Comp 
         className={cn(buttonVariants({ variant, size, className }))} 
         ref={ref} 
         {...props}
       >
-        {React.Children.map(children, (child) => {
-          if (typeof child === 'string') {
-            return <span className="truncate">{child}</span>;
-          }
-          return child;
-        })}
+        {processedChildren}
       </Comp>
     );
   },
