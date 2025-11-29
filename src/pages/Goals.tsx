@@ -205,6 +205,7 @@ const GoalCard = ({
           )}>
             {goal.current_value}/{goal.target_value}
           </span>
+          </span>
         </div>
       </div>
 
@@ -554,7 +555,7 @@ const Goals = () => {
           {/* Мотивационное сообщение */}
           {currentStreak > 0 && (
             <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border/30 text-center">
-              <p className="text-sm text-primary font-medium">
+              <p className="text-sm text-primary font-medium px-2 break-words">
                 🔥 {currentStreak} {currentStreak === 1 ? "день" : currentStreak < 5 ? "дня" : "дней"} подряд! Продолжайте!
               </p>
             </div>
@@ -585,16 +586,17 @@ const Goals = () => {
                 onClick={() => setFilter(tab.id as typeof filter)}
                 className={cn(
                   "px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all",
-                  "flex items-center gap-1.5 sm:gap-2",
+                  "flex items-center gap-1.5 sm:gap-2 min-w-0",
+                  "overflow-hidden",
                   filter === tab.id
                     ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
                     : "bg-card text-muted-foreground border border-border/50 hover:border-primary/30"
                 )}
               >
-                {tab.label}
+                <span className="truncate">{tab.label}</span>
                 {tab.count > 0 && (
                   <span className={cn(
-                    "px-1.5 py-0.5 rounded-full text-[10px] font-bold",
+                    "px-1.5 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0",
                     filter === tab.id ? "bg-primary-foreground/20 text-primary-foreground" : "bg-secondary text-foreground"
                   )}>
                     {tab.count}
@@ -759,13 +761,13 @@ const Goals = () => {
                 {(selectedGoal.category === "zikr" || selectedGoal.category === "quran") && (
                   <Button
                     variant="outline"
-                    className="flex-1 rounded-xl border-border/50"
+                    className="flex-1 rounded-xl border-border/50 min-w-0 overflow-hidden"
                     onClick={() => {
                       setGoalDetailOpen(false);
                       navigate(`/tasbih?goal=${selectedGoal.id}`);
                     }}
                   >
-                    Открыть в Тасбих
+                    <span className="truncate">Открыть в Тасбих</span>
                   </Button>
                 )}
                 <Button
