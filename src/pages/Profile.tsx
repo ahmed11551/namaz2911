@@ -1,11 +1,12 @@
 // Профиль пользователя - стиль Fintrack
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { MainHeader } from "@/components/layout/MainHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { 
   User, 
   Settings, 
   Bell, 
+  BellOff,
   Moon, 
   Sun,
   ChevronRight,
@@ -19,6 +20,7 @@ import {
   LogOut,
   Palette,
   Volume2,
+  VolumeX,
   Vibrate,
   Globe,
   HelpCircle,
@@ -29,12 +31,59 @@ import {
   TrendingUp,
   Calendar,
   Award,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { spiritualPathAPI } from "@/lib/api";
 import { useUserData } from "@/hooks/useUserData";
 import { useNavigate } from "react-router-dom";
 import type { Goal, Badge, Streak } from "@/types/spiritual-path";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+
+// Типы настроек
+interface AppSettings {
+  notifications: boolean;
+  darkTheme: boolean;
+  language: "ru" | "en" | "ar";
+  sounds: boolean;
+}
+
+const SETTINGS_KEY = "app_settings";
+const LANGUAGES = [
+  { code: "ru", name: "Русский", flag: "🇷🇺" },
+  { code: "en", name: "English", flag: "🇬🇧" },
+  { code: "ar", name: "العربية", flag: "🇸🇦" },
+] as const;
+
+const getDefaultSettings = (): AppSettings => ({
+  notifications: true,
+  darkTheme: true,
+  language: "ru",
+  sounds: true,
+});
+
+const loadSettings = (): AppSettings => {
+  try {
+    const saved = localStorage.getItem(SETTINGS_KEY);
+    if (saved) {
+      return { ...getDefaultSettings(), ...JSON.parse(saved) };
+    }
+  } catch (e) {
+    console.error("Error loading settings:", e);
+  }
+  return getDefaultSettings();
+};
+
+const saveSettings = (settings: AppSettings) => {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+};
 
 // Уровни пользователя
 const LEVELS = [
@@ -62,11 +111,98 @@ const getUserLevel = (xp: number) => {
 
 const Profile = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { userData } = useUserData();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [badges, setBadges] = useState<Badge[]>([]);
   const [streaks, setStreaks] = useState<Streak[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Настройки приложения
+  const [settings, setSettings] = useState<AppSettings>(loadSettings);
+  const [languageDialogOpen, setLanguageDialogOpen] = useState(false);
+  const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
+
+  // Применяем тему при изменении
+  useEffect(() => {
+    if (settings.darkTheme) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [settings.darkTheme]);
+
+  // Обновление настроек
+  const updateSetting = useCallback(<K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
+    setSettings(prev => {
+      const newSettings = { ...prev, [key]: value };
+      saveSettings(newSettings);
+      return newSettings;
+    });
+  }, []);
+
+  // Переключение уведомлений
+  const toggleNotifications = async () => {
+    if (!settings.notifications) {
+      // Включаем уведомления
+      if ("Notification" in window) {
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+          updateSetting("notifications", true);
+          toast({
+            title: "Уведомления включены",
+            description: "Вы будете получать напоминания о намазах",
+          });
+        } else {
+          toast({
+            title: "Разрешение отклонено",
+            description: "Разрешите уведомления в настройках браузера",
+            variant: "destructive",
+          });
+        }
+      }
+    } else {
+      updateSetting("notifications", false);
+      toast({
+        title: "Уведомления отключены",
+      });
+    }
+  };
+
+  // Переключение темы
+  const toggleTheme = () => {
+    updateSetting("darkTheme", !settings.darkTheme);
+    toast({
+      title: settings.darkTheme ? "Светлая тема" : "Тёмная тема",
+      description: settings.darkTheme ? "Включена светлая тема" : "Включена тёмная тема",
+    });
+  };
+
+  // Переключение звуков
+  const toggleSounds = () => {
+    updateSetting("sounds", !settings.sounds);
+    if (!settings.sounds) {
+      // Воспроизводим тестовый звук при включении
+      try {
+        const audio = new Audio("/sounds/tap.mp3");
+        audio.volume = 0.3;
+        audio.play().catch(() => {});
+      } catch (e) {}
+    }
+    toast({
+      title: settings.sounds ? "Звуки отключены" : "Звуки включены",
+    });
+  };
+
+  // Смена языка
+  const changeLanguage = (lang: "ru" | "en" | "ar") => {
+    updateSetting("language", lang);
+    setLanguageDialogOpen(false);
+    toast({
+      title: "Язык изменён",
+      description: LANGUAGES.find(l => l.code === lang)?.name,
+    });
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -106,14 +242,40 @@ const Profile = () => {
     ? Object.values(userData.repayment_progress.completed_prayers).reduce((a, b) => a + (b || 0), 0)
     : 0;
 
+  const currentLang = LANGUAGES.find(l => l.code === settings.language);
+
   const menuItems = [
     { 
       section: "Общее",
       items: [
-        { icon: Bell, label: "Уведомления", value: "Включены", color: "text-blue-400" },
-        { icon: Moon, label: "Тёмная тема", value: "Вкл", color: "text-purple-400" },
-        { icon: Globe, label: "Язык", value: "Русский", color: "text-cyan-400" },
-        { icon: Volume2, label: "Звуки", value: "Вкл", color: "text-green-400" },
+        { 
+          icon: settings.notifications ? Bell : BellOff, 
+          label: "Уведомления", 
+          value: settings.notifications ? "Включены" : "Выкл", 
+          color: settings.notifications ? "text-blue-400" : "text-muted-foreground",
+          action: toggleNotifications,
+        },
+        { 
+          icon: settings.darkTheme ? Moon : Sun, 
+          label: "Тёмная тема", 
+          value: settings.darkTheme ? "Вкл" : "Выкл", 
+          color: settings.darkTheme ? "text-purple-400" : "text-amber-400",
+          action: toggleTheme,
+        },
+        { 
+          icon: Globe, 
+          label: "Язык", 
+          value: currentLang?.name || "Русский", 
+          color: "text-cyan-400",
+          action: () => setLanguageDialogOpen(true),
+        },
+        { 
+          icon: settings.sounds ? Volume2 : VolumeX, 
+          label: "Звуки", 
+          value: settings.sounds ? "Вкл" : "Выкл", 
+          color: settings.sounds ? "text-green-400" : "text-muted-foreground",
+          action: toggleSounds,
+        },
       ]
     },
     {
@@ -128,9 +290,26 @@ const Profile = () => {
     {
       section: "Поддержка",
       items: [
-        { icon: HelpCircle, label: "Помощь", color: "text-yellow-400" },
-        { icon: Share2, label: "Поделиться", color: "text-blue-400" },
-        { icon: Star, label: "Оценить приложение", color: "text-amber-400" },
+        { icon: HelpCircle, label: "Помощь", color: "text-yellow-400", action: () => {
+          toast({ title: "Помощь", description: "Свяжитесь с нами: support@namaz.app" });
+        }},
+        { icon: Share2, label: "Поделиться", color: "text-blue-400", action: async () => {
+          if (navigator.share) {
+            try {
+              await navigator.share({
+                title: "Трекер намазов",
+                text: "Отслеживайте намазы и духовный прогресс",
+                url: window.location.origin,
+              });
+            } catch (e) {}
+          } else {
+            navigator.clipboard.writeText(window.location.origin);
+            toast({ title: "Ссылка скопирована!" });
+          }
+        }},
+        { icon: Star, label: "Оценить приложение", color: "text-amber-400", action: () => {
+          toast({ title: "Спасибо!", description: "Ваша оценка важна для нас 💚" });
+        }},
       ]
     },
   ];
@@ -320,6 +499,38 @@ const Profile = () => {
           <p className="text-xs text-muted-foreground mt-1">С любовью для уммы 💚</p>
         </div>
       </main>
+
+      {/* Language Dialog */}
+      <Dialog open={languageDialogOpen} onOpenChange={setLanguageDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Globe className="w-5 h-5 text-cyan-400" />
+              Выберите язык
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 pt-4">
+            {LANGUAGES.map((lang) => (
+              <button
+                key={lang.code}
+                onClick={() => changeLanguage(lang.code)}
+                className={cn(
+                  "w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors",
+                  settings.language === lang.code
+                    ? "bg-primary/20 border-2 border-primary"
+                    : "bg-secondary hover:bg-secondary/80 border-2 border-transparent"
+                )}
+              >
+                <span className="text-2xl">{lang.flag}</span>
+                <span className="flex-1 text-left font-medium">{lang.name}</span>
+                {settings.language === lang.code && (
+                  <Check className="w-5 h-5 text-primary" />
+                )}
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <BottomNav />
     </div>
