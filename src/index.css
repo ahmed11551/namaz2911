@@ -165,7 +165,18 @@
 
   p {
     @apply text-base leading-relaxed;
-    line-height: 1.6;
+    line-height: 1.7;
+    @apply mb-3;
+  }
+  
+  /* Улучшенные отступы для секций */
+  section {
+    @apply mb-8 sm:mb-12;
+  }
+  
+  /* Улучшенные отступы для контейнеров */
+  .section-spacing {
+    @apply mb-6 sm:mb-8;
   }
 
   /* Улучшенные размеры для мобильных */
@@ -548,7 +559,13 @@
   }
 
   .breathing-glow {
-    animation: breathing-glow 3s ease-in-out infinite;
+    animation: breathing-glow 4s ease-in-out infinite;
+  }
+  
+  /* Более тонкая версия */
+  .breathing-glow-subtle {
+    animation: breathing-glow 5s ease-in-out infinite;
+    animation-duration: 5s;
   }
 
   /* Gradient shift animation */
@@ -604,8 +621,13 @@
   }
 
   .slide-up {
-    animation: slide-up-fade 0.5s ease-out forwards;
+    animation: slide-up-fade 0.4s ease-out forwards;
     opacity: 0;
+  }
+  
+  /* Упрощённая версия без задержки */
+  .slide-up-simple {
+    animation: slide-up-fade 0.3s ease-out;
   }
 
   /* Slide in from left */

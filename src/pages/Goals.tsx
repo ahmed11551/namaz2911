@@ -158,8 +158,8 @@ const GoalCard = ({
     <div
       onClick={onClick}
       className={cn(
-        "w-full bg-card rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-border/50 cursor-pointer",
-        "hover:border-primary/40 hover:shadow-md hover:shadow-primary/10 transition-all duration-200",
+        "w-full bg-card rounded-2xl p-5 sm:p-6 border border-border/50 cursor-pointer",
+        "hover:border-primary/30 hover:shadow-md transition-all duration-200",
         "flex items-center gap-3 sm:gap-4 text-left group",
         isComplete && "ring-2 ring-primary/30 bg-primary/5"
       )}
@@ -177,7 +177,7 @@ const GoalCard = ({
 
       {/* Контент - улучшенный */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
+        <div className="flex items-center gap-3 mb-3">
           <h3 className="font-semibold text-sm sm:text-base text-foreground truncate">
             {goal.title}
           </h3>
@@ -187,7 +187,7 @@ const GoalCard = ({
         </div>
         
         {/* Прогресс бар - улучшенный */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-4">
           <div className="flex-1 h-1.5 sm:h-2 bg-secondary/50 rounded-full overflow-hidden">
             <div
               className={cn(
@@ -462,9 +462,9 @@ const Goals = () => {
     <div className="min-h-screen bg-background pb-28">
       <MainHeader />
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-lg">
+      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-lg">
         {/* Header - упрощённый */}
-        <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <div className="flex items-center justify-between mb-6 sm:mb-8">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-foreground">Цели</h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
@@ -481,7 +481,7 @@ const Goals = () => {
         </div>
 
         {/* Горизонтальный календарь - упрощённый */}
-        <div className="flex gap-1.5 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-2 -mx-3 sm:-mx-4 px-3 sm:px-4 no-scrollbar">
+        <div className="flex gap-2 sm:gap-3 mb-6 sm:mb-8 overflow-x-auto pb-2 -mx-4 sm:-mx-6 px-4 sm:px-6 no-scrollbar">
           {weekDays.map((day) => {
             const isSelected = day.date.toDateString() === selectedDate.toDateString();
             const isToday = day.isToday;
@@ -516,8 +516,8 @@ const Goals = () => {
         </div>
 
         {/* Компактная статистика - объединённая */}
-        <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl p-4 sm:p-5 mb-4 sm:mb-6 border border-primary/20 slide-up">
-          <div className="grid grid-cols-3 gap-3 sm:gap-4">
+        <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl p-6 sm:p-8 mb-6 sm:mb-8 border border-primary/20">
+          <div className="grid grid-cols-3 gap-4 sm:gap-6">
             {/* Streak */}
             <button 
               onClick={() => navigate("/statistics")}
@@ -554,7 +554,7 @@ const Goals = () => {
           
           {/* Мотивационное сообщение */}
           {currentStreak > 0 && (
-            <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border/30 text-center">
+            <div className="mt-6 pt-6 border-t border-border/30 text-center">
               <p className="text-sm text-primary font-medium px-2 break-words">
                 🔥 {currentStreak} {currentStreak === 1 ? "день" : currentStreak < 5 ? "дня" : "дней"} подряд! Продолжайте!
               </p>
@@ -563,7 +563,7 @@ const Goals = () => {
         </div>
 
         {/* Search и фильтры - объединённые */}
-        <div className="mb-4 sm:mb-6 space-y-3">
+        <div className="mb-6 sm:mb-8 space-y-4">
           {/* Поиск */}
           <div className="relative">
             <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
@@ -608,7 +608,7 @@ const Goals = () => {
         </div>
 
         {/* Goals List - улучшенный spacing */}
-        <div className="space-y-2 sm:space-y-3">
+        <div className="space-y-4">
           {filteredGoals.length > 0 ? (
             filteredGoals.map((goal) => (
               <GoalCard
@@ -639,10 +639,10 @@ const Goals = () => {
 
         {/* Smart Templates Button - упрощённый */}
         {filteredGoals.length > 0 && (
-          <div className="mt-4 sm:mt-6">
+          <div className="mt-8">
             <button
               onClick={() => setTemplatesOpen(true)}
-              className="w-full bg-card/50 rounded-xl p-3 sm:p-4 border border-border/30 hover:border-primary/30 hover:bg-card transition-all flex items-center gap-3 sm:gap-4"
+              className="w-full bg-card rounded-2xl p-5 sm:p-6 border border-border/50 hover:border-primary/30 hover:shadow-md transition-all flex items-center gap-4"
             >
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white flex-shrink-0">
                 <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />

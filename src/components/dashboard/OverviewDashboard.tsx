@@ -284,7 +284,7 @@ export const OverviewDashboard = ({ onNavigateToCalculator }: OverviewDashboardP
   return (
     <div className={cn("space-y-6", showContent ? "opacity-100" : "opacity-0")} style={{ transition: 'opacity 0.3s' }}>
       {/* Balance Card - Fintrack Style with animations */}
-      <div className="balance-card p-4 sm:p-6 text-white slide-up gradient-animate breathing-glow">
+      <div className="balance-card p-6 sm:p-8 text-white">
         <div className="flex items-center justify-between mb-6">
           <div>
             <p className="text-white/70 text-sm mb-1">Общий прогресс</p>
@@ -506,7 +506,7 @@ export const OverviewDashboard = ({ onNavigateToCalculator }: OverviewDashboardP
 
       {/* Empty State with animations */}
       {goals.length === 0 && prayerProgress.total === 0 && (
-        <div className="bg-card rounded-2xl p-4 sm:p-6 lg:p-8 border border-border/50 text-center slide-up neon-border" style={{ animationDelay: '0.3s' }}>
+        <div className="bg-card rounded-2xl p-6 sm:p-8 border border-border/50 text-center">
           <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4 breathing-glow">
             <Sparkles className="w-8 h-8 text-primary wiggle" />
           </div>

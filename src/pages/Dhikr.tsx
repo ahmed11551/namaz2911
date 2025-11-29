@@ -37,11 +37,11 @@ const Dhikr = () => {
     <div className="min-h-screen bg-background pb-28">
       <MainHeader />
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-lg">
-        {/* Category Tabs - Fintrack Style */}
+      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-lg">
+        {/* Category Tabs - упрощённый */}
         <div
           ref={tabsRef}
-          className="flex gap-2 mb-6 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4"
+          className="flex gap-3 mb-8 overflow-x-auto no-scrollbar pb-2 -mx-4 sm:-mx-6 px-4 sm:px-6"
         >
           {TABS.map((tab) => (
             <button
@@ -49,9 +49,9 @@ const Dhikr = () => {
               data-tab={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "flex items-center gap-2 px-5 py-3 rounded-xl whitespace-nowrap transition-all flex-shrink-0 font-medium",
+                "flex items-center gap-3 px-6 py-3.5 rounded-xl whitespace-nowrap transition-all flex-shrink-0 font-medium",
                 activeTab === tab.id
-                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+                  ? "bg-primary text-primary-foreground shadow-md"
                   : "bg-card text-muted-foreground border border-border/50 hover:border-primary/30 hover:text-foreground"
               )}
             >

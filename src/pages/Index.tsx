@@ -73,12 +73,12 @@ const Index = () => {
       <MainHeader />
       <WelcomeDialog onNavigateToCalculator={handleNavigateToCalculator} />
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-lg">
-        {/* Tabs Navigation - Fintrack Style with animations */}
+      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-lg">
+        {/* Tabs Navigation - упрощённый */}
         <div
           ref={tabsRef}
           className={cn(
-            "flex gap-2 mb-4 sm:mb-6 overflow-x-auto no-scrollbar pb-1 -mx-3 sm:-mx-4 px-3 sm:px-4 transition-opacity duration-300",
+            "flex gap-3 mb-6 sm:mb-8 overflow-x-auto no-scrollbar pb-2 -mx-4 sm:-mx-6 px-4 sm:px-6",
             showContent ? "opacity-100" : "opacity-0"
           )}
         >
@@ -94,18 +94,14 @@ const Index = () => {
                 }
               }}
               className={cn(
-                "flex items-center gap-2.5 px-5 py-3 rounded-xl whitespace-nowrap transition-all flex-shrink-0 text-base font-medium slide-up interactive haptic-light",
+                "flex items-center gap-3 px-6 py-3.5 rounded-xl whitespace-nowrap transition-all flex-shrink-0 text-base font-medium",
                 "min-h-[48px]",
                 activeTab === tab.id
-                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25 scale-105"
-                  : "bg-card text-muted-foreground border-2 border-border/50 hover:border-primary/30 hover:text-foreground hover:bg-card/80"
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "bg-card text-muted-foreground border border-border/50 hover:border-primary/30 hover:text-foreground"
               )}
-              style={{ animationDelay: `${index * 0.05}s` }}
             >
-              <span className={cn(
-                "transition-transform duration-300",
-                activeTab === tab.id && "scale-110"
-              )}>
+              <span>
                 {tab.icon}
               </span>
               <span>{tab.label}</span>
@@ -113,10 +109,10 @@ const Index = () => {
           ))}
         </div>
 
-        {/* Content with transition animation */}
+        {/* Content */}
         <div className={cn(
-          "min-h-[60vh] transition-all duration-300",
-          isTransitioning ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"
+          "min-h-[60vh] transition-opacity duration-200",
+          isTransitioning ? "opacity-50" : "opacity-100"
         )}>
           {activeTab === "overview" && <OverviewDashboard onNavigateToCalculator={handleNavigateToCalculator} />}
           {activeTab === "calculator" && <CalculatorSection />}
