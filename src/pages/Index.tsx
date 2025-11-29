@@ -73,12 +73,12 @@ const Index = () => {
       <MainHeader />
       <WelcomeDialog onNavigateToCalculator={handleNavigateToCalculator} />
 
-      <main className="container mx-auto px-4 py-6 max-w-lg">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-lg">
         {/* Tabs Navigation - Fintrack Style with animations */}
         <div
           ref={tabsRef}
           className={cn(
-            "flex gap-2 mb-6 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4 transition-opacity duration-300",
+            "flex gap-2 mb-4 sm:mb-6 overflow-x-auto no-scrollbar pb-1 -mx-3 sm:-mx-4 px-3 sm:px-4 transition-opacity duration-300",
             showContent ? "opacity-100" : "opacity-0"
           )}
         >

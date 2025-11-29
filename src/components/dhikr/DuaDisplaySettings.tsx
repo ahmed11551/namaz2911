@@ -98,7 +98,7 @@ export const DuaDisplaySettings = ({ settings, onSettingsChange }: DuaDisplaySet
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-full bg-white border border-border/50 hover:bg-secondary"
+            className="h-10 w-10 rounded-full bg-card border border-border/50 hover:bg-secondary"
             aria-label="Размер арабского шрифта"
           >
             <Type className="h-5 w-5 text-foreground" />
@@ -132,7 +132,7 @@ export const DuaDisplaySettings = ({ settings, onSettingsChange }: DuaDisplaySet
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-full bg-white border border-border/50 hover:bg-secondary"
+            className="h-10 w-10 rounded-full bg-card border border-border/50 hover:bg-secondary"
             aria-label="Выбор языка перевода"
           >
             <Languages className="h-5 w-5 text-foreground" />
@@ -203,7 +203,7 @@ export const DuaDisplaySettings = ({ settings, onSettingsChange }: DuaDisplaySet
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-full bg-white border border-border/50 hover:bg-secondary"
+            className="h-10 w-10 rounded-full bg-card border border-border/50 hover:bg-secondary"
             aria-label="Все настройки отображения"
           >
             <Settings className="h-5 w-5 text-foreground" />

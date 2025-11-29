@@ -87,8 +87,8 @@ interface TasbihContent {
 type DhikrItemTypeKey = Parameters<typeof getDhikrItemById>[1];
 
 const CATEGORIES: { id: CategoryType; label: string; icon: React.ReactNode; color: string }[] = [
-  { id: "goals", label: "Цели", icon: <Target className="w-5 h-5" />, color: "bg-emerald-500" },
-  { id: "dhikr", label: "Зикры", icon: <Star className="w-5 h-5" />, color: "bg-emerald-600" },
+  { id: "goals", label: "Цели", icon: <Target className="w-5 h-5" />, color: "bg-primary" },
+  { id: "dhikr", label: "Зикры", icon: <Star className="w-5 h-5" />, color: "bg-primary-dark" },
   { id: "quran", label: "Коран", icon: <BookOpen className="w-5 h-5" />, color: "bg-emerald-700" },
   { id: "names", label: "99 Имён", icon: <Sparkles className="w-5 h-5" />, color: "bg-emerald-800" },
 ];
@@ -625,7 +625,7 @@ export const EnhancedTasbih = ({ goalId }: EnhancedTasbihProps) => {
           {/* Current selection header */}
           <button
             onClick={() => setSelectorOpen(true)}
-            className="flex items-center justify-between p-4 mb-6 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all"
+            className="flex items-center justify-between p-4 mb-6 rounded-2xl bg-card border border-border/50 shadow-md hover:shadow-lg hover:border-primary/30 transition-all"
           >
             <div className="text-left">
               <p className="text-sm text-muted-foreground">Текущий зикр</p>
@@ -659,14 +659,14 @@ export const EnhancedTasbih = ({ goalId }: EnhancedTasbihProps) => {
                 className="drop-shadow-2xl"
               >
                 <div className="flex flex-col items-center">
-                  <span className="text-6xl font-bold tabular-nums text-gray-900">
+                  <span className="text-6xl font-bold tabular-nums text-foreground">
                     {currentCount}
                   </span>
-                  <span className="text-lg text-gray-500 mt-1">
+                  <span className="text-lg text-muted-foreground mt-1">
                     из {targetValue}
                   </span>
                   {isComplete && (
-                    <Badge className="mt-3 bg-emerald-100 text-emerald-700 border-emerald-200">
+                    <Badge className="mt-3 bg-primary/20 text-primary border-primary/30">
                       <Check className="w-3 h-3 mr-1" />
                       Завершено
                     </Badge>
@@ -721,7 +721,7 @@ export const EnhancedTasbih = ({ goalId }: EnhancedTasbihProps) => {
                 size="icon"
                 className={cn(
                   "rounded-full w-12 h-12 transition-all",
-                  isAutoRunning && "bg-emerald-500 hover:bg-emerald-600 animate-pulse"
+                  isAutoRunning && "bg-primary hover:bg-primary-dark animate-pulse"
                 )}
                 onClick={toggleAutoMode}
               >
@@ -754,16 +754,16 @@ export const EnhancedTasbih = ({ goalId }: EnhancedTasbihProps) => {
                 ) : (
         /* Empty state */
         <div className="flex-1 flex flex-col items-center justify-center">
-          <div className="w-32 h-32 rounded-full bg-emerald-50 flex items-center justify-center mb-6">
-            <Sparkles className="w-12 h-12 text-emerald-300" />
+          <div className="w-32 h-32 rounded-full bg-primary/20 flex items-center justify-center mb-6">
+            <Sparkles className="w-12 h-12 text-primary" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Начните тасбих</h2>
-          <p className="text-gray-500 text-center mb-8 max-w-xs">
+          <h2 className="text-xl font-semibold text-foreground mb-2">Начните тасбих</h2>
+          <p className="text-muted-foreground text-center mb-8 max-w-xs">
             Выберите зикр или цель для начала поминания
           </p>
           <Button
             size="lg"
-            className="rounded-full px-8 bg-emerald-500 hover:bg-emerald-600"
+            className="rounded-full px-8 bg-primary hover:bg-primary-dark"
             onClick={() => setSelectorOpen(true)}
           >
             Выбрать зикр
@@ -828,7 +828,7 @@ export const EnhancedTasbih = ({ goalId }: EnhancedTasbihProps) => {
                         className={cn(
                         "w-full p-4 rounded-2xl text-left transition-all",
                         "bg-card hover:bg-accent/50 border border-border/50",
-                        selectedGoal?.id === goal.id && "border-emerald-500 bg-emerald-50"
+                        selectedGoal?.id === goal.id && "border-primary bg-primary/20"
                         )}
                       >
                           <div className="flex items-center justify-between">
@@ -910,7 +910,7 @@ export const EnhancedTasbih = ({ goalId }: EnhancedTasbihProps) => {
                       className={cn(
                         "w-full p-4 rounded-2xl text-left transition-all",
                         "bg-card hover:bg-accent/50 border border-border/50",
-                        selectedItem?.id === item.id && "border-emerald-500 bg-emerald-50"
+                        selectedItem?.id === item.id && "border-primary bg-primary/20"
                       )}
                     >
                       <p className="font-medium line-clamp-1">

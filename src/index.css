@@ -140,6 +140,10 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    /* Принудительно тёмный фон для мобильных */
+    background-color: hsl(var(--background)) !important;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
   }
 
   /* Улучшенная типографика для удобства чтения */
@@ -168,6 +172,28 @@
   @media (max-width: 640px) {
     body {
       font-size: 16px; /* Минимум для предотвращения зума на iOS */
+      line-height: 1.5;
+    }
+    
+    /* Улучшенная типографика для мобильных */
+    h1 {
+      font-size: 1.5rem;
+      line-height: 1.3;
+    }
+    
+    h2 {
+      font-size: 1.25rem;
+      line-height: 1.4;
+    }
+    
+    h3 {
+      font-size: 1.125rem;
+      line-height: 1.4;
+    }
+    
+    p {
+      font-size: 0.9375rem;
+      line-height: 1.6;
     }
   }
 
@@ -216,6 +242,8 @@
     position: relative;
     /* Улучшенный padding для безопасных зон */
     padding-bottom: env(safe-area-inset-bottom);
+    /* Принудительно тёмный фон */
+    background-color: hsl(var(--background));
   }
 
   #root {
@@ -224,6 +252,184 @@
     position: relative;
     min-height: 100vh;
     min-height: -webkit-fill-available; /* iOS Safari */
+    /* Принудительно тёмный фон */
+    background-color: hsl(var(--background));
+  }
+
+  /* Мобильная адаптивность - исправление контейнеров */
+  @media (max-width: 640px) {
+    .container {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+    
+    /* Убираем горизонтальный скролл */
+    * {
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    
+    /* Улучшенные отступы для мобильных */
+    .mobile-padding {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+    
+    /* Уменьшаем размеры на мобильных */
+    h1 {
+      font-size: 1.25rem;
+      line-height: 1.3;
+    }
+    
+    h2 {
+      font-size: 1.125rem;
+      line-height: 1.4;
+    }
+    
+    h3 {
+      font-size: 1rem;
+      line-height: 1.4;
+    }
+    
+    /* Улучшенные карточки для мобильных */
+    .card-mobile {
+      padding: 1rem;
+      border-radius: 1rem;
+    }
+  }
+  
+  /* Исправление белых засветов - принудительно тёмный фон */
+  html {
+    background-color: hsl(var(--background)) !important;
+  }
+  
+  html, body, #root {
+    background-color: hsl(var(--background)) !important;
+  }
+  
+  /* Убираем все белые фоны (кроме декоративных элементов на градиентах) */
+  .bg-white:not([class*="gradient"]):not([class*="backdrop"]) {
+    background-color: hsl(var(--card)) !important;
+  }
+  
+  .text-gray-600,
+  .text-gray-700,
+  .text-gray-800,
+  .text-gray-900 {
+    color: hsl(var(--foreground)) !important;
+  }
+  
+  .border-gray-100,
+  .border-gray-200,
+  .border-gray-300 {
+    border-color: hsl(var(--border)) !important;
+  }
+  
+  .bg-gray-100,
+  .bg-gray-50 {
+    background-color: hsl(var(--secondary)) !important;
+  }
+  
+  /* Мобильная адаптивность - исправление переполнения */
+  @media (max-width: 640px) {
+    /* Убираем горизонтальный скролл */
+    * {
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    
+    /* Исправление контейнеров */
+    .container {
+      width: 100%;
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+    
+    /* Улучшенные карточки */
+    [class*="rounded"] {
+      border-radius: 0.875rem;
+    }
+    
+    /* Улучшенные отступы для мобильных */
+    .space-y-6 > * + * {
+      margin-top: 1rem;
+    }
+    
+    .space-y-4 > * + * {
+      margin-top: 0.75rem;
+    }
+    
+    /* Улучшенные gap для мобильных */
+    .gap-6 {
+      gap: 1rem;
+    }
+    
+    .gap-4 {
+      gap: 0.75rem;
+    }
+    
+    /* Улучшенные padding для мобильных */
+    .p-6 {
+      padding: 1rem;
+    }
+    
+    .p-5 {
+      padding: 0.875rem;
+    }
+    
+    .px-6 {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+    
+    .py-6 {
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+    }
+    
+    /* Улучшенные размеры текста */
+    .text-6xl {
+      font-size: 3rem;
+    }
+    
+    .text-5xl {
+      font-size: 2.5rem;
+    }
+    
+    .text-4xl {
+      font-size: 2rem;
+    }
+    
+    /* Улучшенные размеры иконок */
+    .w-14, .h-14 {
+      width: 3rem;
+      height: 3rem;
+    }
+    
+    .w-16, .h-16 {
+      width: 3.5rem;
+      height: 3.5rem;
+    }
+  }
+  
+  /* Дополнительные исправления для очень маленьких экранов */
+  @media (max-width: 375px) {
+    .container {
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+    
+    h1 {
+      font-size: 1.25rem;
+    }
+    
+    h2 {
+      font-size: 1.125rem;
+    }
+    
+    .text-base {
+      font-size: 0.9375rem;
+    }
   }
 
   /* Минимальные размеры для touch targets (Apple HIG: 44x44px) */

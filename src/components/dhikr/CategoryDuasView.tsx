@@ -162,7 +162,7 @@ export const CategoryDuasView = ({ categoryId, categoryName, onBack }: CategoryD
         {duas.map((dua) => (
           <Card
             key={dua.id}
-            className="bg-white border-border/50 hover:bg-secondary/50 transition-colors cursor-pointer rounded-lg"
+            className="bg-card border-border/50 hover:bg-secondary/50 transition-colors cursor-pointer rounded-lg"
             onClick={() => setSelectedDua(dua)}
           >
             <CardContent className="p-4">

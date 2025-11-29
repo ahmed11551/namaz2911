@@ -39,7 +39,7 @@ export const MainHeader = () => {
       "sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 transition-all duration-500",
       isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
     )}>
-      <div className="container mx-auto px-4 py-5 max-w-lg">
+      <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-5 max-w-lg">
         <div className="flex items-center justify-between gap-3">
           {/* Logo & Title - улучшенная читаемость */}
           <div className="flex items-center gap-3.5 slide-in-left flex-1 min-w-0">

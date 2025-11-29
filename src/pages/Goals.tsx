@@ -450,7 +450,7 @@ const Goals = () => {
     <div className="min-h-screen bg-background pb-28">
       <MainHeader />
 
-      <main className="container mx-auto px-4 py-4 max-w-lg">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-lg">
         {/* Header */}
         {(() => {
           const hour = new Date().getHours();

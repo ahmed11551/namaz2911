@@ -150,7 +150,7 @@ export const DuaSearch = ({ searchQuery: externalQuery, onDuaSelect }: DuaSearch
               {filteredDuas.map((dua) => (
                 <Card
                   key={dua.id}
-                  className="bg-white border-border/50 hover:shadow-md transition-shadow cursor-pointer"
+                  className="bg-card border-border/50 hover:shadow-lg hover:border-primary/30 transition-all cursor-pointer"
                   onClick={() => handleDuaClick(dua)}
                 >
                   <CardContent className="p-4">

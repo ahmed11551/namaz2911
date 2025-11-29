@@ -282,7 +282,7 @@ export const ReportsSection = () => {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-3">
         {statsArray.slice(0, 2).map((stat) => (
-          <div key={stat.label} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+          <div key={stat.label} className="bg-card rounded-2xl p-4 shadow-md border border-border/50">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
                 <stat.icon className="w-4 h-4 text-emerald-600" />
@@ -315,7 +315,7 @@ export const ReportsSection = () => {
       {/* Achievements Preview */}
       <button
         onClick={() => navigate("/statistics")}
-        className="w-full bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all"
+        className="w-full bg-card rounded-2xl p-4 shadow-md border border-border/50 flex items-center gap-4 hover:shadow-lg hover:border-primary/30 transition-all"
       >
         <div className="w-12 h-12 rounded-xl bg-yellow-50 flex items-center justify-center">
           <Trophy className="w-6 h-6 text-yellow-500" />

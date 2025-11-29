@@ -380,18 +380,18 @@ const Profile = () => {
     <div className="min-h-screen bg-background pb-28">
       <MainHeader />
 
-      <main className="container mx-auto px-4 py-6 max-w-lg">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-lg">
         {/* Profile Header Card */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 rounded-3xl p-6 mb-6 text-white">
+        <div className="relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 rounded-3xl p-4 sm:p-6 mb-4 sm:mb-6 text-white">
           {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
           
           <div className="relative z-10">
-            <div className="flex items-start gap-4 mb-6">
+            <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
               {/* Avatar */}
               <div className="relative">
-                <div className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-4xl subtle-float">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-3xl sm:text-4xl subtle-float">
                   {userLevel.icon}
                 </div>
                 <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-sm font-bold shadow-lg">
@@ -443,7 +443,7 @@ const Profile = () => {
         </div>
 
         {/* Achievements Preview */}
-        <div className="bg-card rounded-2xl p-5 border border-border/50 mb-6 slide-up stagger-1">
+        <div className="bg-card rounded-2xl p-4 sm:p-5 border border-border/50 mb-4 sm:mb-6 slide-up stagger-1">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-foreground flex items-center gap-2">
               <Trophy className="w-5 h-5 text-amber-400" />
@@ -489,7 +489,7 @@ const Profile = () => {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-6">
           <div className="bg-card rounded-2xl p-4 border border-border/50 slide-up stagger-2">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center">
@@ -517,7 +517,7 @@ const Profile = () => {
 
         {/* Menu Sections */}
         {menuItems.map((section, sectionIdx) => (
-          <div key={section.section} className="mb-6 slide-up" style={{ animationDelay: `${0.3 + sectionIdx * 0.1}s` }}>
+          <div key={section.section} className="mb-4 sm:mb-6 slide-up" style={{ animationDelay: `${0.3 + sectionIdx * 0.1}s` }}>
             <h4 className="text-sm font-medium text-muted-foreground mb-3 px-1">{section.section}</h4>
             <div className="bg-card rounded-2xl border border-border/50 overflow-hidden">
               {section.items.map((item, i) => (

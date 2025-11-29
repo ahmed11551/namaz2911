@@ -150,10 +150,10 @@ export const CalculatorSection = () => {
         
         <button
           onClick={() => setMode("manual")}
-          className="w-full bg-card rounded-2xl p-5 border border-border/50 hover:border-primary/30 transition-all flex items-center gap-4 text-left hover-lift ripple slide-up stagger-1"
+          className="w-full bg-card rounded-2xl p-4 sm:p-5 border border-border/50 hover:border-primary/30 transition-all flex items-center gap-3 sm:gap-4 text-left hover-lift ripple slide-up stagger-1"
         >
-          <div className="w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center text-primary magnetic wiggle-hover">
-            <CheckSquare className="w-7 h-7" />
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-primary/20 flex items-center justify-center text-primary magnetic wiggle-hover shrink-0">
+            <CheckSquare className="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
           <div className="flex-1">
             <h3 className="font-semibold text-foreground">Я знаю количество</h3>
@@ -164,10 +164,10 @@ export const CalculatorSection = () => {
 
         <button
           onClick={() => setMode("calculator")}
-          className="w-full bg-card rounded-2xl p-5 border border-border/50 hover:border-primary/30 transition-all flex items-center gap-4 text-left hover-lift ripple slide-up stagger-2"
+          className="w-full bg-card rounded-2xl p-4 sm:p-5 border border-border/50 hover:border-primary/30 transition-all flex items-center gap-3 sm:gap-4 text-left hover-lift ripple slide-up stagger-2"
         >
-          <div className="w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center text-primary magnetic wiggle-hover">
-            <Calculator className="w-7 h-7" />
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-primary/20 flex items-center justify-center text-primary magnetic wiggle-hover shrink-0">
+            <Calculator className="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
           <div className="flex-1">
             <h3 className="font-semibold text-foreground">Помощь посчитать</h3>
@@ -196,7 +196,7 @@ export const CalculatorSection = () => {
 
   // Режим калькулятора - Fintrack style
   return (
-    <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
       <button
         onClick={() => setMode("choice")}
         className="flex items-center gap-2 text-primary font-medium"

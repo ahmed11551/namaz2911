@@ -164,7 +164,7 @@ const Onboarding = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-8 relative overflow-hidden">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         {/* Decorative Elements */}
         {slide.decorations}
 
@@ -198,7 +198,7 @@ const Onboarding = () => {
       </div>
 
       {/* Bottom Section */}
-      <div className="p-8 pb-12">
+      <div className="p-4 sm:p-6 lg:p-8 pb-8 sm:pb-12">
         {/* Progress Dots */}
         <div className="flex justify-center gap-2 mb-8">
           {SLIDES.map((_, i) => (
@@ -229,9 +229,9 @@ const Onboarding = () => {
           <button
             onClick={handleNext}
             className={cn(
-              "flex-1 h-14 rounded-2xl bg-white text-gray-900 font-bold text-lg",
+              "flex-1 h-14 rounded-2xl bg-primary text-primary-foreground font-bold text-lg",
               "flex items-center justify-center gap-2",
-              "hover:bg-white/90 active:scale-[0.98] transition-all",
+              "hover:bg-primary/90 active:scale-[0.98] transition-all",
               "shadow-lg shadow-black/20"
             )}
           >

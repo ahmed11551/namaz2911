@@ -238,7 +238,7 @@ export const DuaSectionV2 = () => {
           placeholder="Поиск дуа..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-12 h-12 rounded-xl bg-white border-gray-200"
+          className="pl-12 h-12 rounded-xl bg-card border-border/50"
         />
       </div>
 
@@ -249,7 +249,7 @@ export const DuaSectionV2 = () => {
           className={cn(
             "px-4 py-2 rounded-full text-sm font-medium transition-colors",
             activeTab === "categories"
-              ? "bg-emerald-500 text-white"
+              ? "bg-primary text-primary-foreground"
               : "bg-white text-gray-600 border border-gray-200"
           )}
         >
@@ -260,7 +260,7 @@ export const DuaSectionV2 = () => {
           className={cn(
             "px-4 py-2 rounded-full text-sm font-medium transition-colors",
             activeTab === "favorites"
-              ? "bg-emerald-500 text-white"
+              ? "bg-primary text-primary-foreground"
               : "bg-white text-gray-600 border border-gray-200"
           )}
         >
@@ -271,7 +271,7 @@ export const DuaSectionV2 = () => {
       {/* Результаты поиска */}
       {searchQuery && (
         <div className="space-y-3">
-          <p className="text-sm text-gray-500">Найдено: {filteredDuas.length}</p>
+          <p className="text-sm text-muted-foreground">Найдено: {filteredDuas.length}</p>
           {filteredDuas.map((dua) => (
             <DuaCard key={dua.id} dua={dua} categoryColor="category-general" />
           ))}
@@ -285,16 +285,16 @@ export const DuaSectionV2 = () => {
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
-              className="w-full bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all flex items-center gap-4 text-left"
+              className="w-full bg-card rounded-2xl p-4 shadow-md border border-border/50 hover:shadow-lg hover:border-primary/30 transition-all flex items-center gap-4 text-left"
             >
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-700">
+              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
                 {category.icon}
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">{category.name}</h3>
-                <p className="text-sm text-gray-500">{category.duas.length} дуа</p>
+                <h3 className="font-semibold text-foreground">{category.name}</h3>
+                <p className="text-sm text-muted-foreground">{category.duas.length} дуа</p>
               </div>
-              <ChevronRight className="w-5 h-5 text-gray-400" />
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </button>
           ))}
         </div>
@@ -305,10 +305,10 @@ export const DuaSectionV2 = () => {
         <div className="space-y-3">
           {favorites.length === 0 ? (
             <div className="text-center py-12">
-              <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
                 <Star className="w-8 h-8 text-emerald-300" />
               </div>
-              <p className="text-gray-500">Нет избранных дуа</p>
+              <p className="text-muted-foreground">Нет избранных дуа</p>
               <p className="text-sm text-gray-400 mt-1">
                 Добавьте дуа в избранное
               </p>

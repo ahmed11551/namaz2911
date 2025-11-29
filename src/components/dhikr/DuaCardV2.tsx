@@ -220,7 +220,7 @@ export const DuaCardV2 = memo(({ dua, number, categoryColor }: DuaCardV2Props) =
   }, []);
 
   return (
-    <Card className="bg-white border-border/50 shadow-sm rounded-2xl overflow-hidden">
+    <Card className="bg-card border-border/50 shadow-md rounded-2xl overflow-hidden">
       <CardContent className="p-0">
         {/* Номер вверху */}
         {number !== undefined && (
@@ -232,7 +232,7 @@ export const DuaCardV2 = memo(({ dua, number, categoryColor }: DuaCardV2Props) =
         )}
 
         {/* Серый блок с текстом и кнопками */}
-        <div className="bg-gray-100 rounded-2xl mx-4 mb-4 p-4 space-y-4">
+        <div className="bg-secondary/50 rounded-2xl mx-4 mb-4 p-4 space-y-4">
           {/* Транслитерация */}
           {settings.showTranscription && (
             <div className="space-y-2">
@@ -271,7 +271,7 @@ export const DuaCardV2 = memo(({ dua, number, categoryColor }: DuaCardV2Props) =
             {/* Кнопка сброса/отмены */}
             <button
               onClick={handleReset}
-              className="w-10 h-10 rounded-full bg-white border border-border/50 flex items-center justify-center hover:bg-secondary transition-colors"
+              className="w-10 h-10 rounded-full bg-card border border-border/50 flex items-center justify-center hover:bg-secondary transition-colors"
               aria-label="Сбросить счетчик"
             >
               <RotateCcw className="w-5 h-5 text-foreground" />
@@ -301,7 +301,7 @@ export const DuaCardV2 = memo(({ dua, number, categoryColor }: DuaCardV2Props) =
             {/* Счетчик */}
             <button
               onClick={handleIncrement}
-              className="w-10 h-10 rounded-full bg-white border border-border/50 flex items-center justify-center hover:bg-secondary transition-colors"
+              className="w-10 h-10 rounded-full bg-card border border-border/50 flex items-center justify-center hover:bg-secondary transition-colors"
               aria-label="Увеличить счетчик"
             >
               <span className="text-sm font-semibold text-foreground">{count}</span>
