@@ -188,7 +188,7 @@ export default function SpiritualPath() {
               )}
               style={{ 
                 WebkitOverflowScrolling: 'touch',
-                touchAction: 'pan-x',
+                touchAction: 'pan-x pinch-zoom',
                 overscrollBehaviorX: 'contain',
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none'
@@ -225,10 +225,14 @@ export default function SpiritualPath() {
                       "whitespace-nowrap",
                       "data-[state=active]:bg-background",
                       "data-[state=active]:text-foreground",
-                      "data-[state=active]:shadow-sm"
+                      "data-[state=active]:shadow-sm",
+                      "cursor-pointer",
+                      "select-none"
                     )}
+                    style={{ touchAction: 'manipulation' }}
+                    aria-label={tab.label}
                   >
-                    <tab.icon className="w-4 h-4 shrink-0" />
+                    <tab.icon className="w-4 h-4 shrink-0" aria-hidden="true" />
                     <span>{tab.label}</span>
                   </TabsTrigger>
                 ))}

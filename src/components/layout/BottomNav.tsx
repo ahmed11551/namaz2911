@@ -51,17 +51,18 @@ export const BottomNav = () => {
             if (isMain) {
               // Central main button - увеличен для удобства
               return (
-                <Link
-                  key={path}
-                  to={path}
-                  className="relative -mt-7 interactive haptic-medium"
-                  onClick={() => {
-                    // Haptic feedback для мобильных
-                    if (window.Telegram?.WebApp?.HapticFeedback) {
-                      window.Telegram.WebApp.HapticFeedback.impactOccurred("medium");
-                    }
-                  }}
-                >
+              <Link
+                key={path}
+                to={path}
+                className="relative -mt-7 interactive haptic-medium"
+                aria-label={label}
+                onClick={() => {
+                  // Haptic feedback для мобильных
+                  if (window.Telegram?.WebApp?.HapticFeedback) {
+                    window.Telegram.WebApp.HapticFeedback.impactOccurred("medium");
+                  }
+                }}
+              >
                   <div className={cn(
                     "w-20 h-20 rounded-2xl flex items-center justify-center transition-all duration-300",
                     "bg-gradient-to-br from-primary to-primary-dark",
@@ -98,6 +99,7 @@ export const BottomNav = () => {
                   "slide-up"
                 )}
                 style={{ animationDelay: `${index * 0.05}s` }}
+                aria-label={label}
                 onClick={() => {
                   // Haptic feedback
                   if (window.Telegram?.WebApp?.HapticFeedback) {

@@ -96,10 +96,10 @@ export const enableBackgroundNotifications = async () => {
 
   if (!subscription) {
     try {
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-      });
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
     } catch (error) {
       console.warn("Не удалось подписаться на push, используем локальные уведомления:", error);
       persistSubscription({ local_only: true } as unknown as PushSubscriptionJSON);
@@ -114,7 +114,7 @@ export const enableBackgroundNotifications = async () => {
   };
 
   try {
-    await spiritualPathAPI.registerPushSubscription(payload);
+  await spiritualPathAPI.registerPushSubscription(payload);
   } catch (error) {
     console.warn("Не удалось зарегистрировать push на сервере, используем локальные уведомления:", error);
     // Продолжаем работу с локальными уведомлениями
@@ -162,16 +162,16 @@ export const sendLocalNotification = async (title: string, body: string, options
   // Пробуем через Service Worker
   if (isPushSupported()) {
     try {
-      const registration = await getServiceWorkerRegistration();
-      if (registration.active) {
-        registration.active.postMessage({
-          type: "LOCAL_NOTIFICATION",
-          payload: {
-            title,
-            body,
+  const registration = await getServiceWorkerRegistration();
+  if (registration.active) {
+    registration.active.postMessage({
+      type: "LOCAL_NOTIFICATION",
+      payload: {
+        title,
+        body,
             ...options,
-          },
-        });
+      },
+    });
         return;
       }
     } catch (error) {

@@ -274,10 +274,15 @@ const Goals = () => {
     setLoading(true);
     
     // Сначала загружаем из localStorage для мгновенного отображения
-    const cachedGoals = spiritualPathAPI.getGoalsFromLocalStorage("all");
-    if (cachedGoals.length > 0) {
-      setGoals(cachedGoals);
-      setLoading(false); // Показываем данные сразу
+    try {
+      const cachedGoals = spiritualPathAPI.getGoalsFromLocalStorage("all");
+      if (cachedGoals.length > 0) {
+        setGoals(cachedGoals);
+        setLoading(false); // Показываем данные сразу
+      }
+    } catch (error) {
+      console.warn("Error loading cached goals:", error);
+      // Продолжаем загрузку из API
     }
     
     try {
@@ -291,15 +296,44 @@ const Goals = () => {
       // Обновляем только если данные успешно загружены
       if (goalsData.status === "fulfilled") {
         setGoals(goalsData.value);
+      } else if (goalsData.status === "rejected") {
+        console.error("Error loading goals:", goalsData.reason);
       }
+      
       if (streaksData.status === "fulfilled") {
         setStreaks(streaksData.value);
+      } else if (streaksData.status === "rejected") {
+        console.error("Error loading streaks:", streaksData.reason);
       }
+      
       if (badgesData.status === "fulfilled") {
         setBadges(badgesData.value);
+      } else if (badgesData.status === "rejected") {
+        console.error("Error loading badges:", badgesData.reason);
+      }
+      
+      // Показываем общую ошибку только если все запросы провалились
+      const allFailed = 
+        goalsData.status === "rejected" && 
+        streaksData.status === "rejected" && 
+        badgesData.status === "rejected";
+      
+      if (allFailed && goals.length === 0) {
+        toast({
+          title: "Ошибка загрузки",
+          description: "Не удалось загрузить данные. Проверьте подключение к интернету.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Error loading data:", error);
+      if (goals.length === 0) {
+        toast({
+          title: "Ошибка",
+          description: "Не удалось загрузить данные",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }

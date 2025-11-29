@@ -380,9 +380,9 @@ const Profile = () => {
     <div className="min-h-screen bg-background pb-28">
       <MainHeader />
 
-      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-lg">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-lg">
         {/* Profile Header Card */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 rounded-3xl p-6 sm:p-8 mb-8 text-white">
+        <div className="relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 rounded-3xl p-4 sm:p-6 mb-4 sm:mb-6 text-white">
           {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
@@ -443,7 +443,7 @@ const Profile = () => {
         </div>
 
         {/* Achievements Preview */}
-        <div className="bg-card rounded-2xl p-6 sm:p-8 border border-border/50 mb-6 slide-up stagger-1">
+        <div className="bg-card rounded-2xl p-4 sm:p-5 border border-border/50 mb-4 sm:mb-6 slide-up stagger-1">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-foreground flex items-center gap-2">
               <Trophy className="w-5 h-5 text-amber-400" />
@@ -517,7 +517,7 @@ const Profile = () => {
 
         {/* Menu Sections */}
         {menuItems.map((section, sectionIdx) => (
-          <div key={section.section} className="mb-8 slide-up" style={{ animationDelay: `${0.3 + sectionIdx * 0.1}s` }}>
+          <div key={section.section} className="mb-4 sm:mb-6 slide-up" style={{ animationDelay: `${0.3 + sectionIdx * 0.1}s` }}>
             <h4 className="text-sm font-medium text-muted-foreground mb-3 px-1">{section.section}</h4>
             <div className="bg-card rounded-2xl border border-border/50 overflow-hidden">
               {section.items.map((item, i) => (
