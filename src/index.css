@@ -29,9 +29,9 @@
     --secondary: 220 15% 16%;
     --secondary-foreground: 0 0% 90%;
 
-    /* Muted */
+    /* Muted - улучшенная контрастность */
     --muted: 220 15% 18%;
-    --muted-foreground: 220 10% 55%;
+    --muted-foreground: 220 10% 65%;
 
     /* Accent - Gold/Orange for highlights */
     --accent: 38 95% 55%;
@@ -136,6 +136,39 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    /* Улучшенная читаемость */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Улучшенная типографика для удобства чтения */
+  h1 {
+    @apply text-2xl sm:text-3xl font-bold leading-tight tracking-tight;
+  }
+
+  h2 {
+    @apply text-xl sm:text-2xl font-semibold leading-tight;
+  }
+
+  h3 {
+    @apply text-lg sm:text-xl font-semibold leading-snug;
+  }
+
+  h4 {
+    @apply text-base sm:text-lg font-medium;
+  }
+
+  p {
+    @apply text-base leading-relaxed;
+    line-height: 1.6;
+  }
+
+  /* Улучшенные размеры для мобильных */
+  @media (max-width: 640px) {
+    body {
+      font-size: 16px; /* Минимум для предотвращения зума на iOS */
+    }
   }
 
   /* Custom scrollbar for dark theme */
@@ -181,6 +214,8 @@
     overflow-x: hidden;
     width: 100%;
     position: relative;
+    /* Улучшенный padding для безопасных зон */
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   #root {
@@ -188,6 +223,99 @@
     overflow-x: hidden;
     position: relative;
     min-height: 100vh;
+    min-height: -webkit-fill-available; /* iOS Safari */
+  }
+
+  /* Минимальные размеры для touch targets (Apple HIG: 44x44px) */
+  button, a[role="button"], [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+    @apply flex items-center justify-center;
+  }
+
+  /* Улучшенные кнопки для удобства нажатия */
+  .btn-touch {
+    @apply min-h-[48px] min-w-[48px] px-4 py-3;
+    @apply text-base font-medium;
+    @apply active:scale-95 transition-transform duration-150;
+  }
+
+  /* Улучшенный spacing для карточек */
+  .card-spacing {
+    @apply p-5 sm:p-6;
+    @apply gap-4 sm:gap-5;
+  }
+
+  /* Улучшенная читаемость текста */
+  .text-readable {
+    @apply text-base leading-relaxed;
+    line-height: 1.7;
+    letter-spacing: 0.01em;
+    color: hsl(var(--foreground));
+  }
+
+  /* Улучшенная читаемость для мелкого текста */
+  .text-readable-sm {
+    @apply text-sm leading-relaxed;
+    line-height: 1.6;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Улучшенный контраст для важных элементов */
+  .text-high-contrast {
+    @apply text-foreground;
+    font-weight: 500;
+  }
+
+  /* Улучшенные интерактивные элементы */
+  .interactive {
+    @apply cursor-pointer;
+    @apply transition-all duration-200;
+    @apply active:scale-[0.97];
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Улучшенная доступность - фокус для клавиатурной навигации */
+  .interactive:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
+    @apply ring-2 ring-primary ring-offset-2;
+  }
+
+  /* Улучшенный контраст для текста */
+  .text-contrast-high {
+    @apply text-foreground;
+    font-weight: 600;
+  }
+
+  .text-contrast-medium {
+    @apply text-foreground/90;
+    font-weight: 500;
+  }
+
+  /* Улучшенная читаемость для карточек */
+  .card-readable {
+    @apply bg-card;
+    @apply border-2 border-border/60;
+    @apply shadow-md;
+  }
+
+  /* Улучшенная видимость для важных элементов */
+  .important-element {
+    @apply border-2 border-primary/30;
+    @apply shadow-lg shadow-primary/10;
+  }
+
+  /* Haptic feedback для мобильных */
+  @media (hover: none) and (pointer: coarse) {
+    .haptic-light:active {
+      -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+    }
+    .haptic-medium:active {
+      -webkit-tap-highlight-color: rgba(0, 0, 0, 0.15);
+    }
+    .haptic-heavy:active {
+      -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
+    }
   }
 }
 
@@ -1183,5 +1311,40 @@
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Улучшенная доступность - screen reader only */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Улучшенная видимость для фокуса */
+  *:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
+    @apply ring-2 ring-primary/50 ring-offset-2;
+  }
+
+  /* Улучшенная контрастность для ссылок */
+  a {
+    @apply text-primary;
+    @apply hover:text-primary/80;
+    @apply underline-offset-4;
+    @apply transition-colors;
+  }
+
+  /* Улучшенная видимость для disabled элементов */
+  [disabled],
+  [aria-disabled="true"] {
+    @apply opacity-50;
+    @apply cursor-not-allowed;
+    pointer-events: none;
   }
 }

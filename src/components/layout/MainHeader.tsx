@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Sparkles, Bell, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { hapticFeedback } from "@/lib/haptics";
 
 export const MainHeader = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [logoError, setLogoError] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [hasNotification] = useState(true); // Demo notification
@@ -31,69 +33,80 @@ export const MainHeader = () => {
   };
 
   const { title, subtitle, emoji } = getPageInfo();
-  const logoUrl = "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/cc/e2/51/cce2511d-7436-95af-c944-7dda394c0c3b/AppIcon-0-0-1x_U007emarketing-0-8-0-0-85-220.png/1200x630wa.png";
 
   return (
     <header className={cn(
       "sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 transition-all duration-500",
       isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
     )}>
-      <div className="container mx-auto px-4 py-4 max-w-lg">
-        <div className="flex items-center justify-between">
-          {/* Logo & Title */}
-          <div className="flex items-center gap-3 slide-in-left">
+      <div className="container mx-auto px-4 py-5 max-w-lg">
+        <div className="flex items-center justify-between gap-3">
+          {/* Logo & Title - улучшенная читаемость */}
+          <div className="flex items-center gap-3.5 slide-in-left flex-1 min-w-0">
             <div className="relative shrink-0">
-              <div className="w-12 h-12 rounded-2xl overflow-hidden bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg shadow-primary/20 magnetic subtle-float">
+              <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg shadow-primary/20 magnetic subtle-float">
                 {!logoError ? (
                   <img 
-                    src={logoUrl}
+                    src="/logo.svg"
                     alt="Logo" 
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover p-1"
                     onError={() => setLogoError(true)}
                   />
                 ) : (
-                  <Sparkles className="w-6 h-6 text-primary-foreground wiggle" />
+                  <Sparkles className="w-7 h-7 text-primary-foreground" />
                 )}
               </div>
               {/* Online indicator with pulse */}
-              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-primary rounded-full border-2 border-background" />
-              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-primary rounded-full border-2 border-background animate-ping opacity-75" />
+              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-primary rounded-full border-2 border-background" />
+              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-primary rounded-full border-2 border-background animate-ping opacity-75" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-foreground">{title}</h1>
-                <span className="text-lg wiggle-hover cursor-default">{emoji}</span>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight">{title}</h1>
+                <span className="text-xl sm:text-2xl wiggle-hover cursor-default">{emoji}</span>
               </div>
-              <p className="text-sm text-muted-foreground">{subtitle}</p>
+              <p className="text-sm sm:text-base text-muted-foreground mt-0.5 leading-snug">{subtitle}</p>
             </div>
           </div>
 
-          {/* Actions with staggered animation */}
-          <div className="flex items-center gap-2 slide-in-right">
+          {/* Actions - увеличенные для удобства */}
+          <div className="flex items-center gap-2 slide-in-right shrink-0">
             <button 
-              onClick={() => window.location.href = '/ai-chat'}
-              className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 flex items-center justify-center transition-all group magnetic ripple stagger-1 shadow-lg shadow-violet-500/20"
+              onClick={() => {
+                hapticFeedback.light();
+                navigate('/ai-chat');
+              }}
+              className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 flex items-center justify-center transition-all group interactive haptic-light shadow-lg shadow-violet-500/20"
+              aria-label="AI Помощник"
             >
-              <Sparkles className="w-5 h-5 text-white" />
+              <Sparkles className="w-6 h-6 text-white" />
             </button>
             <button 
-              onClick={() => window.location.href = '/profile'}
-              className="w-10 h-10 rounded-xl bg-card hover:bg-secondary flex items-center justify-center transition-all relative group magnetic ripple stagger-2"
+              onClick={() => {
+                hapticFeedback.light();
+                navigate('/profile');
+              }}
+              className="w-12 h-12 rounded-xl bg-card hover:bg-secondary flex items-center justify-center transition-all relative group interactive haptic-light"
+              aria-label="Уведомления"
             >
-              <Bell className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+              <Bell className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors" />
               {/* Notification badge with animation */}
               {hasNotification && (
                 <>
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full" />
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full animate-ping" />
+                  <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-primary rounded-full" />
+                  <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-primary rounded-full animate-ping" />
                 </>
               )}
             </button>
             <button 
-              onClick={() => window.location.href = '/profile'}
-              className="w-10 h-10 rounded-xl bg-card hover:bg-secondary flex items-center justify-center transition-all group magnetic ripple stagger-3"
+              onClick={() => {
+                hapticFeedback.light();
+                navigate('/profile');
+              }}
+              className="w-12 h-12 rounded-xl bg-card hover:bg-secondary flex items-center justify-center transition-all group interactive haptic-light"
+              aria-label="Настройки"
             >
-              <Settings className="w-5 h-5 text-muted-foreground group-hover:text-foreground group-hover:rotate-90 transition-all duration-300" />
+              <Settings className="w-6 h-6 text-muted-foreground group-hover:text-foreground group-hover:rotate-90 transition-all duration-300" />
             </button>
           </div>
         </div>

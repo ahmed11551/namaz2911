@@ -43,28 +43,34 @@ export const BottomNav = () => {
       {/* Glass background with blur */}
       <div className="absolute inset-0 bg-card/90 backdrop-blur-xl border-t border-border/50" />
       
-      <div className="relative container mx-auto px-2 max-w-lg">
-        <div className="flex justify-around items-center h-20 py-2">
+      <div className="relative container mx-auto px-3 max-w-lg">
+        <div className="flex justify-around items-center h-24 py-3">
           {navItems.map(({ path, icon: Icon, label, isMain }, index) => {
             const isActive = location.pathname === path;
             
             if (isMain) {
-              // Central main button with glow effect
+              // Central main button - увеличен для удобства
               return (
                 <Link
                   key={path}
                   to={path}
-                  className="relative -mt-6"
+                  className="relative -mt-7 interactive haptic-medium"
+                  onClick={() => {
+                    // Haptic feedback для мобильных
+                    if (window.Telegram?.WebApp?.HapticFeedback) {
+                      window.Telegram.WebApp.HapticFeedback.impactOccurred("medium");
+                    }
+                  }}
                 >
                   <div className={cn(
-                    "w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300",
+                    "w-20 h-20 rounded-2xl flex items-center justify-center transition-all duration-300",
                     "bg-gradient-to-br from-primary to-primary-dark",
-                    "shadow-lg shadow-primary/30 magnetic",
+                    "shadow-lg shadow-primary/30",
                     isActive && "breathing-glow scale-105",
                     "hover:scale-110 active:scale-95"
                   )}>
                     <Icon className={cn(
-                      "w-7 h-7 text-primary-foreground transition-transform",
+                      "w-8 h-8 text-primary-foreground transition-transform",
                       isActive && "scale-110"
                     )} />
                     
@@ -74,8 +80,8 @@ export const BottomNav = () => {
                     )}
                   </div>
                   <span className={cn(
-                    "block text-center text-[10px] font-medium mt-1.5 transition-all",
-                    isActive ? "text-primary text-glow" : "text-muted-foreground"
+                    "block text-center text-xs font-semibold mt-2 transition-all",
+                    isActive ? "text-primary" : "text-muted-foreground"
                   )}>
                     {label}
                   </span>
@@ -88,19 +94,25 @@ export const BottomNav = () => {
                 key={path}
                 to={path}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-1 px-3 py-2 min-w-[60px] group",
+                  "flex flex-col items-center justify-center gap-1.5 px-2 py-2 min-w-[64px] group interactive haptic-light",
                   "slide-up"
                 )}
                 style={{ animationDelay: `${index * 0.05}s` }}
+                onClick={() => {
+                  // Haptic feedback
+                  if (window.Telegram?.WebApp?.HapticFeedback) {
+                    window.Telegram.WebApp.HapticFeedback.impactOccurred("light");
+                  }
+                }}
               >
                 <div className={cn(
-                  "relative w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 magnetic",
+                  "relative w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300",
                   isActive 
-                    ? "bg-primary/15" 
-                    : "bg-transparent group-hover:bg-secondary"
+                    ? "bg-primary/20 border-2 border-primary/50" 
+                    : "bg-transparent border-2 border-transparent group-hover:bg-secondary/50"
                 )}>
                   <Icon className={cn(
-                    "w-5 h-5 transition-all duration-300",
+                    "w-6 h-6 transition-all duration-300",
                     isActive 
                       ? "text-primary scale-110" 
                       : "text-muted-foreground group-hover:text-foreground"
@@ -109,14 +121,14 @@ export const BottomNav = () => {
                   {/* Active indicator dot with pulse */}
                   {isActive && (
                     <>
-                      <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary" />
-                      <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
+                      <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-primary" />
+                      <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-primary animate-ping" />
                     </>
                   )}
                 </div>
                 <span className={cn(
-                  "text-[10px] font-medium transition-colors",
-                  isActive ? "text-primary" : "text-muted-foreground"
+                  "text-xs font-medium transition-colors leading-tight",
+                  isActive ? "text-primary font-semibold" : "text-muted-foreground"
                 )}>
                   {label}
                 </span>
