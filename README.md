@@ -38,7 +38,10 @@ Telegram Mini App для расчета и отслеживания воспол
 - **Роутинг**: React Router
 - **State**: React Query
 - **Сборка**: Vite
+- **Backend**: Supabase Edge Functions
+- **База данных**: PostgreSQL (Supabase)
 - **Интеграции**: Telegram WebApp API, e-Replika API
+- **Мониторинг**: Встроенный модуль производительности
 
 ## Установка
 

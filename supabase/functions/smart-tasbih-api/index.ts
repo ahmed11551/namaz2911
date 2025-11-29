@@ -3,6 +3,7 @@
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { measurePerformance } from "./monitoring.ts";
 
 // Типы для данных
 interface RequestBody {
@@ -108,21 +109,77 @@ Deno.serve(async (req: Request) => {
       userId = authHeader?.substring(7) || "unknown";
     }
 
-    // Роутинг
+    // Роутинг с мониторингом производительности
     if (path === "/bootstrap" && method === "GET") {
-      return await handleBootstrap(supabase, userId);
+      return await measurePerformance(
+        "/bootstrap",
+        "GET",
+        () => handleBootstrap(supabase, userId),
+        userId || undefined
+      );
     } else if (path === "/goals" && method === "POST") {
-      return await handleCreateOrUpdateGoal(requestBody, supabase, userId);
+      return await measurePerformance(
+        "/goals",
+        "POST",
+        () => handleCreateOrUpdateGoal(requestBody, supabase, userId),
+        userId || undefined
+      );
     } else if (path === "/sessions/start" && method === "POST") {
-      return await handleStartSession(requestBody, supabase, userId);
+      return await measurePerformance(
+        "/sessions/start",
+        "POST",
+        () => handleStartSession(requestBody, supabase, userId),
+        userId || undefined
+      );
     } else if (path === "/counter/tap" && method === "POST") {
-      return await handleCounterTap(requestBody, supabase, userId);
+      return await measurePerformance(
+        "/counter/tap",
+        "POST",
+        () => handleCounterTap(requestBody, supabase, userId),
+        userId || undefined
+      );
     } else if (path === "/learn/mark" && method === "POST") {
-      return await handleMarkLearned(requestBody, supabase, userId);
+      return await measurePerformance(
+        "/learn/mark",
+        "POST",
+        () => handleMarkLearned(requestBody, supabase, userId),
+        userId || undefined
+      );
     } else if (path === "/reports/daily" && method === "GET") {
-      return await handleDailyReport(req, supabase, userId);
+      return await measurePerformance(
+        "/reports/daily",
+        "GET",
+        () => handleDailyReport(req, supabase, userId),
+        userId || undefined
+      );
     } else if (path === "/sync/offline" && method === "POST") {
-      return await handleSyncOffline(requestBody, supabase, userId);
+      return await measurePerformance(
+        "/sync/offline",
+        "POST",
+        () => handleSyncOffline(requestBody, supabase, userId),
+        userId || undefined
+      );
+    } else if (path === "/metrics" && method === "GET") {
+      // Эндпоинт для получения метрик (только для внутреннего использования)
+      try {
+        const { getAggregatedMetrics } = await import("./monitoring.ts");
+        const metrics = getAggregatedMetrics(undefined, undefined, 60);
+        return new Response(
+          JSON.stringify({ metrics }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      } catch (error) {
+        console.error("Error loading metrics:", error);
+        return new Response(
+          JSON.stringify({ error: "Metrics not available" }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
     } else {
       return new Response(
         JSON.stringify({ error: "Not found" }),

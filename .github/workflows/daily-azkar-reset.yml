@@ -1,0 +1,24 @@
+name: Daily Azkar Reset
+
+on:
+  schedule:
+    # Запускается каждые 5 минут
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # Позволяет запускать вручную
+
+jobs:
+  reset-azkar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Daily Azkar Reset Function
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            https://fvxkywczuqincnjilgzd.supabase.co/functions/v1/daily-azkar-reset
+          
+          echo "Daily azkar reset function called successfully"
+
