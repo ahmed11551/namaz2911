@@ -14,7 +14,8 @@ import {
   Sparkles,
   Heart,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  ArrowUp
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { spiritualPathAPI } from "@/lib/api";
@@ -38,15 +39,31 @@ const MAX_FREE_GOALS = 5;
 export const GoalsByCategory = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
     loadGoals();
   }, []);
+
+  // Отслеживание прокрутки для показа кнопки "Наверх"
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const loadGoals = async () => {
     setLoading(true);

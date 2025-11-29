@@ -131,6 +131,22 @@ CREATE TABLE IF NOT EXISTS ai_reports (
 CREATE INDEX IF NOT EXISTS idx_ai_reports_user_id ON ai_reports(user_id);
 CREATE INDEX IF NOT EXISTS idx_ai_reports_generated_at ON ai_reports(generated_at);
 
+-- Таблица подписок пользователей
+CREATE TABLE IF NOT EXISTS user_subscriptions (
+  user_id TEXT PRIMARY KEY,
+  tier TEXT NOT NULL DEFAULT 'muslim' CHECK (tier IN ('muslim', 'mutahsin', 'sahib_al_waqf')),
+  subscription_start TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  subscription_end TIMESTAMPTZ,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Индексы для подписок
+CREATE INDEX IF NOT EXISTS idx_user_subscriptions_user_id ON user_subscriptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_subscriptions_tier ON user_subscriptions(tier);
+CREATE INDEX IF NOT EXISTS idx_user_subscriptions_is_active ON user_subscriptions(is_active);
+
 -- Таблица настроек уведомлений
 CREATE TABLE IF NOT EXISTS notification_settings (
   user_id TEXT PRIMARY KEY,
@@ -141,6 +157,7 @@ CREATE TABLE IF NOT EXISTS notification_settings (
   daily_reminder_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   motivation_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   badge_notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  telegram_chat_id TEXT,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

@@ -2600,6 +2600,103 @@ export const spiritualPathAPI = {
       },
     };
   },
+
+  // Подписки и тарифы
+  async getSubscription(): Promise<{ user_id: string; tier: "muslim" | "mutahsin" | "sahib_al_waqf"; subscription_start: string; subscription_end: string | null; is_active: boolean }> {
+    const userId = getUserId();
+    
+    // Если нет userId, возвращаем бесплатный тариф
+    if (!userId) {
+      return {
+        user_id: `local_${Date.now()}`,
+        tier: "muslim",
+        subscription_start: new Date().toISOString(),
+        subscription_end: null,
+        is_active: true,
+      };
+    }
+
+    try {
+      const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/spiritual-path-api/subscription`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "apikey": SUPABASE_ANON_KEY,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Сохраняем в localStorage для быстрого доступа
+        localStorage.setItem("user_tier", data.tier);
+        return data;
+      }
+    } catch (error) {
+      console.warn("Supabase API недоступен для подписки:", error);
+    }
+
+    // Fallback: загружаем из localStorage или возвращаем бесплатный тариф
+    const storedTier = localStorage.getItem("user_tier");
+    if (storedTier === "muslim" || storedTier === "mutahsin" || storedTier === "sahib_al_waqf") {
+      return {
+        user_id: userId,
+        tier: storedTier as "muslim" | "mutahsin" | "sahib_al_waqf",
+        subscription_start: new Date().toISOString(),
+        subscription_end: null,
+        is_active: true,
+      };
+    }
+
+    return {
+      user_id: userId,
+      tier: "muslim",
+      subscription_start: new Date().toISOString(),
+      subscription_end: null,
+      is_active: true,
+    };
+  },
+
+  async updateSubscription(tier: "muslim" | "mutahsin" | "sahib_al_waqf", subscriptionEnd?: string): Promise<{ user_id: string; tier: string; subscription_start: string; subscription_end: string | null; is_active: boolean }> {
+    const userId = getUserId();
+    
+    if (!userId) {
+      throw new Error("User ID required");
+    }
+
+    try {
+      const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/spiritual-path-api/subscription`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "apikey": SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          tier,
+          subscription_end: subscriptionEnd || null,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem("user_tier", data.tier);
+        return data;
+      }
+    } catch (error) {
+      console.warn("Supabase API недоступен для обновления подписки:", error);
+    }
+
+    // Fallback: сохраняем локально
+    localStorage.setItem("user_tier", tier);
+    return {
+      user_id: userId,
+      tier,
+      subscription_start: new Date().toISOString(),
+      subscription_end: subscriptionEnd || null,
+      is_active: true,
+    };
+  },
 };
 
 // API для системы друзей (соревновательный эффект)

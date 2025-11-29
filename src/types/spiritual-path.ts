@@ -83,6 +83,9 @@ export interface Goal {
     audioUrl?: string | null;
     reference?: string;
   };
+  // Напоминания для цели
+  reminder_enabled?: boolean;
+  reminder_time?: string; // HH:mm format
 }
 
 export interface GoalProgress {

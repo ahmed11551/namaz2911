@@ -36,6 +36,7 @@ import {
 import type { Goal } from "@/types/spiritual-path";
 import { cn } from "@/lib/utils";
 import { hapticFeedback, playSound } from "@/lib/sounds";
+import { differenceInDays } from "date-fns";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -622,19 +623,84 @@ export const EnhancedTasbih = ({ goalId }: EnhancedTasbihProps) => {
       {/* Selected item display */}
       {content ? (
         <div className="flex-1 flex flex-col">
-          {/* Current selection header */}
-          <button
-            onClick={() => setSelectorOpen(true)}
-            className="flex items-center justify-between p-4 mb-6 rounded-2xl bg-card border border-border/50 shadow-md hover:shadow-lg hover:border-primary/30 transition-all"
-          >
-            <div className="text-left">
-              <p className="text-sm text-muted-foreground">Текущий зикр</p>
-              <p className="font-semibold line-clamp-1">
-                {selectedGoal?.title || selectedItem?.title || selectedItem?.translation || "Выбрать"}
-              </p>
-                  </div>
-            <ChevronRight className="w-5 h-5 text-muted-foreground" />
-          </button>
+          {/* Current selection header with quick selector */}
+          <div className="mb-6 space-y-3">
+            <button
+              onClick={() => setSelectorOpen(true)}
+              className="flex items-center justify-between p-4 w-full rounded-2xl bg-card border border-border/50 shadow-md hover:shadow-lg hover:border-primary/30 transition-all"
+            >
+              <div className="text-left flex-1 min-w-0">
+                <p className="text-sm text-muted-foreground">Текущий зикр</p>
+                <p className="font-semibold line-clamp-1">
+                  {selectedGoal?.title || selectedItem?.title || selectedItem?.translation || "Выбрать"}
+                </p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0 ml-2" />
+            </button>
+
+            {/* Ближайшие цели - быстрый доступ */}
+            {goals.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground px-1">Ближайшие цели:</p>
+                <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 no-scrollbar">
+                  {goals
+                    .filter(g => g.status === "active" && g.end_date)
+                    .sort((a, b) => {
+                      const dateA = new Date(a.end_date!).getTime();
+                      const dateB = new Date(b.end_date!).getTime();
+                      return dateA - dateB;
+                    })
+                    .slice(0, 3)
+                    .map((goal) => {
+                      const endDate = new Date(goal.end_date!);
+                      const daysUntil = Math.ceil((endDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                      const isUrgent = daysUntil >= 0 && daysUntil <= 3;
+                      const progressPercent = goal.target_value > 0
+                        ? Math.min(100, (goal.current_value / goal.target_value) * 100)
+                        : 0;
+
+                      return (
+                        <button
+                          key={goal.id}
+                          onClick={() => handleGoalSelect(goal.id)}
+                          className={cn(
+                            "flex-shrink-0 p-3 rounded-xl border transition-all text-left min-w-[140px]",
+                            selectedGoal?.id === goal.id
+                              ? "bg-primary/10 border-primary/50"
+                              : isUrgent
+                              ? "bg-yellow-500/5 border-yellow-500/30 hover:border-yellow-500/50"
+                              : "bg-card border-border/50 hover:border-primary/30"
+                          )}
+                        >
+                          <p className="text-xs font-medium text-foreground line-clamp-1 mb-1">
+                            {goal.title}
+                          </p>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">
+                              {Math.round(progressPercent)}%
+                            </span>
+                            {isUrgent && (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-yellow-500/50 text-yellow-600">
+                                {daysUntil === 0 ? "Сегодня" : `${daysUntil}д`}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="mt-1.5 h-1 bg-secondary rounded-full overflow-hidden">
+                            <div
+                              className={cn(
+                                "h-full transition-all",
+                                isUrgent ? "bg-yellow-500" : "bg-primary"
+                              )}
+                              style={{ width: `${progressPercent}%` }}
+                            />
+                          </div>
+                        </button>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Counter area */}
           <div className="flex-1 flex flex-col items-center justify-center">

@@ -6,6 +6,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Sheet,
   SheetContent,
@@ -32,6 +33,7 @@ import {
   Lightbulb,
   Clock,
   Zap,
+  Prayer,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { spiritualPathAPI } from "@/lib/api";
@@ -39,6 +41,7 @@ import type { Goal, Streak, Badge } from "@/types/spiritual-path";
 import { cn } from "@/lib/utils";
 import { CreateGoalDialog } from "@/components/spiritual-path/CreateGoalDialog";
 import { SmartGoalTemplates } from "@/components/spiritual-path/SmartGoalTemplates";
+import { GoalsByCategory } from "@/components/spiritual-path/GoalsByCategory";
 import { useNavigate } from "react-router-dom";
 // Упрощённый дизайн - виджеты убраны для лучшей производительности и чистоты интерфейса
 // import { AnalyticsWidget } from "@/components/goals/AnalyticsWidget";
@@ -597,14 +600,48 @@ const Goals = () => {
               {activeGoals > 0 ? `${activeGoals} активных` : "Создайте первую цель"}
             </p>
           </div>
-          <button
-            onClick={() => navigate("/statistics")}
-            className="p-2 sm:p-2.5 rounded-xl bg-card hover:bg-secondary transition-colors border border-border/50"
-            aria-label="Статистика"
-          >
-            <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
-          </button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setCreateDialogOpen(true)}
+              size="sm"
+              className="rounded-xl"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Добавить
+            </Button>
+            <button
+              onClick={() => navigate("/statistics")}
+              className="p-2 sm:p-2.5 rounded-xl bg-card hover:bg-secondary transition-colors border border-border/50"
+              aria-label="Статистика"
+            >
+              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+            </button>
+          </div>
         </div>
+
+        {/* Блок пропущенные намазы */}
+        <Card className="mb-4 bg-gradient-to-r from-orange-500/10 to-red-500/10 border-orange-500/20">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
+                  <Prayer className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Пропущенные намазы</h3>
+                  <p className="text-xs text-muted-foreground">Рассчитайте и восполните</p>
+                </div>
+              </div>
+              <Button
+                onClick={() => navigate("/spiritual-path?tab=qaza")}
+                variant="outline"
+                size="sm"
+              >
+                Посчитать намазы
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Горизонтальный календарь - упрощённый */}
         <div className="flex gap-1.5 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-2 -mx-3 sm:-mx-4 px-3 sm:px-4 no-scrollbar">
@@ -688,98 +725,8 @@ const Goals = () => {
           )}
         </div>
 
-        {/* Search и фильтры - объединённые */}
-        <div className="mb-4 sm:mb-6 space-y-3">
-          {/* Поиск */}
-          <div className="relative">
-            <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
-            <Input
-              placeholder="Поиск целей..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 sm:pl-12 h-11 sm:h-12 rounded-xl bg-card border-border/50 text-sm sm:text-base"
-            />
-          </div>
-          
-          {/* Фильтры - компактные */}
-          <div className="flex gap-2">
-            {[
-              { id: "active", label: "Активные", count: activeGoals },
-              { id: "completed", label: "Готово", count: completedGoals.length },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setFilter(tab.id as typeof filter)}
-                className={cn(
-                  "px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all",
-                  "flex items-center gap-1.5 sm:gap-2",
-                  filter === tab.id
-                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                    : "bg-card text-muted-foreground border border-border/50 hover:border-primary/30"
-                )}
-              >
-                {tab.label}
-                {tab.count > 0 && (
-                  <span className={cn(
-                    "px-1.5 py-0.5 rounded-full text-[10px] font-bold",
-                    filter === tab.id ? "bg-primary-foreground/20 text-primary-foreground" : "bg-secondary text-foreground"
-                  )}>
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Goals List - улучшенный spacing */}
-        <div className="space-y-2 sm:space-y-3">
-          {filteredGoals.length > 0 ? (
-            filteredGoals.map((goal) => (
-              <GoalCard
-                key={goal.id}
-                goal={goal}
-                onClick={() => handleGoalClick(goal)}
-                onQuickAdd={() => handleQuickAdd(goal)}
-              />
-            ))
-          ) : (
-            <div className="text-center py-12">
-              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Sparkles className="w-10 h-10 text-primary/50" />
-              </div>
-              <p className="text-muted-foreground mb-4">
-                {searchQuery ? "Ничего не найдено" : "Нет целей"}
-              </p>
-              <Button 
-                onClick={() => setCreateDialogOpen(true)} 
-                className="rounded-xl bg-primary hover:bg-primary/90"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Создать цель
-              </Button>
-            </div>
-          )}
-        </div>
-
-        {/* Smart Templates Button - упрощённый */}
-        {filteredGoals.length > 0 && (
-          <div className="mt-4 sm:mt-6">
-            <button
-              onClick={() => setTemplatesOpen(true)}
-              className="w-full bg-card/50 rounded-xl p-3 sm:p-4 border border-border/30 hover:border-primary/30 hover:bg-card transition-all flex items-center gap-3 sm:gap-4"
-            >
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white flex-shrink-0">
-                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
-              </div>
-              <div className="flex-1 text-left min-w-0">
-                <h3 className="font-medium text-sm sm:text-base text-foreground truncate">Умные предложения</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground truncate">Готовые шаблоны целей</p>
-              </div>
-              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground flex-shrink-0" />
-            </button>
-          </div>
-        )}
+        {/* Goals by Category - компактный список по категориям */}
+        <GoalsByCategory />
       </main>
 
       {/* FAB с анимациями */}

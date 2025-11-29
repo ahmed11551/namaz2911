@@ -11,7 +11,9 @@ import {
   TrendingUp,
   BookOpen,
   Award,
+  CheckCircle2,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { spiritualPathAPI } from "@/lib/api";
 import { useUserData } from "@/hooks/useUserData";
 import type { Goal, Streak, Badge } from "@/types/spiritual-path";
@@ -72,7 +74,8 @@ const Statistics = () => {
 
       // Обрабатываем цели
       if (results[0].status === "fulfilled") {
-        setGoals(results[0].value);
+        const allGoals = results[0].value;
+        setGoals(allGoals);
       } else {
         console.error("Error loading goals:", results[0].reason);
         // Пытаемся загрузить из localStorage
@@ -131,8 +134,18 @@ const Statistics = () => {
   const currentStreak = streaks.find(s => s.streak_type === "daily_all")?.current_streak || 0;
   const longestStreak = streaks.find(s => s.streak_type === "daily_all")?.longest_streak || 0;
   const completedGoals = goals.filter(g => g.status === "completed").length;
+  const learnedGoals = goals.filter(g => g.status === "completed" && g.is_learning).length;
   const activeGoals = goals.filter(g => g.status === "active").length;
   const totalProgress = goals.reduce((sum, g) => sum + g.current_value, 0);
+
+  // Мотивационное сообщение для страйка
+  const getStreakMotivation = (streak: number): string => {
+    if (streak === 0) return "Начните серию сегодня!";
+    if (streak === 1) return "Отличное начало! Продолжайте завтра";
+    if (streak < 7) return `Ма ша Аллах! У тебя серия ${streak} ${streak === 1 ? "день" : streak < 5 ? "дня" : "дней"} подряд - не останавливайся!`;
+    if (streak < 30) return `Потрясающе! ${streak} дней подряд - ты на правильном пути!`;
+    return `Невероятно! ${streak} дней подряд - ты настоящий мастер!`;
+  };
 
   // Каза статистика
   const qazaTotal = userData?.debt_calculation?.missed_prayers
@@ -178,19 +191,28 @@ const Statistics = () => {
           <h1 className="text-2xl font-bold text-foreground">Статистика</h1>
         </div>
 
-        {/* Streak Card - Fintrack style */}
+        {/* Streak Card - Fintrack style with motivation */}
         <div className="bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-          <div className="relative z-10 flex items-center justify-between">
-            <div>
-              <p className="text-white/70 text-sm mb-1">Текущая серия</p>
-              <p className="text-5xl font-bold">{currentStreak}</p>
-              <p className="text-white/70 text-sm mt-1">дней подряд</p>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-white/70 text-sm mb-1">Текущая серия</p>
+                <p className="text-5xl font-bold">{currentStreak}</p>
+                <p className="text-white/70 text-sm mt-1">дней подряд</p>
+              </div>
+              <div className="text-right">
+                <Flame className="w-16 h-16 text-white/30" />
+                <p className="text-white/70 text-xs mt-2">Рекорд: {longestStreak} дн.</p>
+              </div>
             </div>
-            <div className="text-right">
-              <Flame className="w-16 h-16 text-white/30" />
-              <p className="text-white/70 text-xs mt-2">Рекорд: {longestStreak} дн.</p>
-            </div>
+            {currentStreak > 0 && (
+              <div className="mt-4 pt-4 border-t border-white/20">
+                <p className="text-white/90 text-sm font-medium">
+                  {getStreakMotivation(currentStreak)}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -332,43 +354,97 @@ const Statistics = () => {
           </div>
         </div>
 
-        {/* Badges Section */}
+        {/* Выученные цели */}
+        {learnedGoals > 0 && (
+          <div className="bg-card rounded-2xl p-5 border border-border/50 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-foreground flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-primary" />
+                Выученные
+              </h2>
+              <span className="text-sm text-muted-foreground">{learnedGoals} выучено</span>
+            </div>
+            <div className="space-y-2">
+              {goals
+                .filter(g => g.status === "completed" && g.is_learning)
+                .slice(0, 5)
+                .map((goal) => (
+                  <div
+                    key={goal.id}
+                    className="flex items-center justify-between p-3 bg-secondary rounded-xl"
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground truncate">{goal.title}</p>
+                        {goal.item_data?.arabic && (
+                          <p className="text-xs text-muted-foreground mt-0.5" dir="rtl">
+                            {goal.item_data.arabic}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="ml-2 flex-shrink-0 border-green-500/50 text-green-600">
+                      Выучено
+                    </Badge>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* Badges Section with improved gradation */}
         <div className="bg-card rounded-2xl p-5 border border-border/50 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-foreground">Достижения</h2>
-            <span className="text-sm text-muted-foreground">{badges.length} / 6</span>
+            <span className="text-sm text-muted-foreground">{badges.length} / 18</span>
           </div>
           
           {badges.length > 0 ? (
-            <div className="grid grid-cols-3 gap-3">
-              {badges.map((badge) => {
-                const info = BADGE_INFO[badge.badge_type] || {
-                  label: badge.badge_type,
-                  icon: "🏆",
-                  color: "bg-gray-500",
-                };
-                const levelColor = LEVEL_COLORS[badge.level as keyof typeof LEVEL_COLORS] || "bg-gray-400";
-                
+            <div className="space-y-4">
+              {/* Группируем бейджи по типу */}
+              {Object.entries(BADGE_INFO).map(([badgeType, info]) => {
+                const typeBadges = badges.filter(b => b.badge_type === badgeType);
+                if (typeBadges.length === 0) return null;
+
                 return (
-                  <div
-                    key={badge.id}
-                    className="flex flex-col items-center p-3 bg-secondary rounded-xl"
-                  >
-                    <div className={cn(
-                      "w-12 h-12 rounded-full flex items-center justify-center text-2xl mb-2",
-                      levelColor + "/20"
-                    )}>
-                      {info.icon}
-                    </div>
-                    <p className="text-xs text-center text-foreground font-medium line-clamp-2">
+                  <div key={badgeType} className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                       {info.label}
                     </p>
-                    <span className={cn(
-                      "text-[10px] px-2 py-0.5 rounded-full text-white mt-1",
-                      levelColor
-                    )}>
-                      {badge.level}
-                    </span>
+                    <div className="grid grid-cols-3 gap-2">
+                      {["copper", "silver", "gold"].map((level) => {
+                        const badge = typeBadges.find(b => b.level === level);
+                        const levelColor = LEVEL_COLORS[level as keyof typeof LEVEL_COLORS] || "bg-gray-400";
+                        
+                        return (
+                          <div
+                            key={level}
+                            className={cn(
+                              "flex flex-col items-center p-3 rounded-xl transition-all",
+                              badge
+                                ? "bg-secondary"
+                                : "bg-secondary/30 opacity-50"
+                            )}
+                          >
+                            <div className={cn(
+                              "w-10 h-10 rounded-full flex items-center justify-center text-xl mb-2",
+                              badge ? levelColor + "/20" : "bg-muted"
+                            )}>
+                              {badge ? info.icon : "🔒"}
+                            </div>
+                            <span className={cn(
+                              "text-[10px] px-2 py-0.5 rounded-full text-white mt-1",
+                              badge ? levelColor : "bg-muted"
+                            )}>
+                              {level === "copper" ? "Бронза" : level === "silver" ? "Серебро" : "Золото"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 );
               })}

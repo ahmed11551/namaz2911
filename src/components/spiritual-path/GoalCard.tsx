@@ -5,6 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   ChevronLeft,
   X,
@@ -14,9 +17,12 @@ import {
   Sparkles,
   Calendar,
   Bell,
+  BellOff,
   Play,
   BookOpen,
-  Prayer
+  Prayer,
+  Pause,
+  XCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { spiritualPathAPI } from "@/lib/api";
@@ -53,6 +59,8 @@ export const GoalCard = ({ goal, onBack, onUpdate }: GoalCardProps) => {
   const { toast } = useToast();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
+  const [reminderEnabled, setReminderEnabled] = useState(goal.reminder_enabled || false);
+  const [reminderTime, setReminderTime] = useState(goal.reminder_time || "09:00");
 
   const progressPercent = goal.target_value > 0 
     ? Math.min(100, (goal.current_value / goal.target_value) * 100) 
@@ -124,6 +132,45 @@ export const GoalCard = ({ goal, onBack, onUpdate }: GoalCardProps) => {
     window.location.href = "/dhikr?goal=" + goal.id;
   };
 
+  const handleToggleReminder = async () => {
+    const newValue = !reminderEnabled;
+    try {
+      await spiritualPathAPI.updateGoal(goal.id, { 
+        reminder_enabled: newValue,
+        reminder_time: reminderTime
+      });
+      setReminderEnabled(newValue);
+      toast({
+        title: newValue ? "Напоминание включено" : "Напоминание выключено",
+      });
+      onUpdate();
+    } catch (error) {
+      console.error("Error updating reminder:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить напоминание",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReminderTimeChange = async (newTime: string) => {
+    setReminderTime(newTime);
+    if (reminderEnabled) {
+      try {
+        await spiritualPathAPI.updateGoal(goal.id, { 
+          reminder_time: newTime
+        });
+        toast({
+          title: "Время напоминания обновлено",
+        });
+        onUpdate();
+      } catch (error) {
+        console.error("Error updating reminder time:", error);
+      }
+    }
+  };
+
   return (
     <>
       <div className="space-y-4">
@@ -171,6 +218,35 @@ export const GoalCard = ({ goal, onBack, onUpdate }: GoalCardProps) => {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Отображение текста выбранного аята/дуа/зикра */}
+            {goal.item_data && (goal.category === "quran" || goal.category === "zikr" || goal.category === "names_of_allah") && (
+              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 space-y-3">
+                {goal.item_data.arabic && (
+                  <div className="text-right">
+                    <p className="text-2xl font-arabic leading-relaxed text-foreground">
+                      {goal.item_data.arabic}
+                    </p>
+                  </div>
+                )}
+                {goal.item_data.transcription && (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Транскрипция:</p>
+                    <p className="text-base text-foreground">{goal.item_data.transcription}</p>
+                  </div>
+                )}
+                {goal.item_data.translation && (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Перевод:</p>
+                    <p className="text-base text-foreground">{goal.item_data.translation}</p>
+                  </div>
+                )}
+                {goal.item_data.reference && (
+                  <div>
+                    <p className="text-xs text-muted-foreground italic">{goal.item_data.reference}</p>
+                  </div>
+                )}
+              </div>
+            )}
             {/* Прогресс */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
@@ -219,6 +295,35 @@ export const GoalCard = ({ goal, onBack, onUpdate }: GoalCardProps) => {
                       {format(new Date(goal.end_date), "dd.MM.yyyy")}
                     </div>
                   </div>
+                </div>
+              )}
+            </div>
+
+            {/* Напоминания */}
+            <div className="p-3 rounded-lg bg-secondary/50 border border-border/50">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  {reminderEnabled ? (
+                    <Bell className="w-4 h-4 text-primary" />
+                  ) : (
+                    <BellOff className="w-4 h-4 text-muted-foreground" />
+                  )}
+                  <Label className="text-sm font-medium">Напоминания</Label>
+                </div>
+                <Switch
+                  checked={reminderEnabled}
+                  onCheckedChange={handleToggleReminder}
+                />
+              </div>
+              {reminderEnabled && (
+                <div className="mt-2">
+                  <Label className="text-xs text-muted-foreground mb-1 block">Время напоминания</Label>
+                  <Input
+                    type="time"
+                    value={reminderTime}
+                    onChange={(e) => handleReminderTimeChange(e.target.value)}
+                    className="w-full"
+                  />
                 </div>
               )}
             </div>
@@ -276,11 +381,32 @@ export const GoalCard = ({ goal, onBack, onUpdate }: GoalCardProps) => {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => {/* TODO: открыть диалог редактирования */}}
+                  onClick={() => setEditDialogOpen(true)}
                   className="min-w-0"
                 >
                   <Edit className="w-4 h-4 mr-2 shrink-0" />
                   <span className="truncate">Редактировать</span>
+                </Button>
+              </div>
+
+              {/* Кнопки Закрыть и Удалить */}
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => setPauseDialogOpen(true)}
+                  className="min-w-0"
+                  disabled={goal.status === "paused" || goal.status === "completed"}
+                >
+                  <Pause className="w-4 h-4 mr-2 shrink-0" />
+                  <span className="truncate">Закрыть</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteDialogOpen(true)}
+                  className="min-w-0 text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4 mr-2 shrink-0" />
+                  <span className="truncate">Удалить</span>
                 </Button>
               </div>
             </div>

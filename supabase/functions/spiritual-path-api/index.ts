@@ -150,6 +150,24 @@ Deno.serve(async (req: Request) => {
     else if (path === "/qaza/calculate" && method === "POST") {
       return await handleCalculateQaza(req, supabase, userId);
     }
+    // Роутинг для уведомлений
+    else if (path === "/notifications/settings" && method === "GET") {
+      return await handleGetNotificationSettings(req, supabase, userId);
+    } else if (path === "/notifications/settings" && method === "PUT") {
+      return await handleUpdateNotificationSettings(req, supabase, userId);
+    } else if (path === "/notifications" && method === "GET") {
+      return await handleGetNotifications(req, supabase, userId);
+    } else if (path === "/notifications/test" && method === "POST") {
+      return await handleSendTestNotification(req, supabase, userId);
+    } else if (path === "/notifications/send" && method === "POST") {
+      return await handleSendNotification(req, supabase, userId);
+    }
+    // Роутинг для подписок/тарифов
+    else if (path === "/subscription" && method === "GET") {
+      return await handleGetSubscription(req, supabase, userId);
+    } else if (path === "/subscription" && method === "PUT") {
+      return await handleUpdateSubscription(req, supabase, userId);
+    }
 
     return new Response(
       JSON.stringify({ error: "Not found" }),
@@ -1106,6 +1124,484 @@ async function checkAndAwardBadges(
   }
 
   return newBadges;
+}
+
+// GET /notifications/settings - Получить настройки уведомлений
+async function handleGetNotificationSettings(
+  req: Request,
+  supabase: SupabaseClient,
+  userId: string
+) {
+  const { data, error } = await supabase
+    .from("notification_settings")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
+
+  if (error && error.code !== "PGRST116") {
+    // PGRST116 = not found, это нормально для первого входа
+    throw error;
+  }
+
+  const defaultSettings = {
+    user_id: userId,
+    enabled: true,
+    telegram_enabled: true,
+    notification_period_start: "08:00",
+    notification_period_end: "22:00",
+    daily_reminder_enabled: true,
+    motivation_enabled: true,
+    badge_notifications_enabled: true,
+    updated_at: new Date().toISOString(),
+  };
+
+  return new Response(
+    JSON.stringify(data || defaultSettings),
+    {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    }
+  );
+}
+
+// PUT /notifications/settings - Обновить настройки уведомлений
+async function handleUpdateNotificationSettings(
+  req: Request,
+  supabase: SupabaseClient,
+  userId: string
+) {
+  const body = await req.json();
+  
+  const settingsData = {
+    user_id: userId,
+    enabled: body.enabled ?? true,
+    telegram_enabled: body.telegram_enabled ?? true,
+    notification_period_start: body.notification_period_start || "08:00",
+    notification_period_end: body.notification_period_end || "22:00",
+    daily_reminder_enabled: body.daily_reminder_enabled ?? true,
+    motivation_enabled: body.motivation_enabled ?? true,
+    badge_notifications_enabled: body.badge_notifications_enabled ?? true,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data, error } = await supabase
+    .from("notification_settings")
+    .upsert(settingsData, { onConflict: "user_id" })
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return new Response(
+    JSON.stringify(data),
+    {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    }
+  );
+}
+
+// GET /notifications - Получить список уведомлений
+async function handleGetNotifications(
+  req: Request,
+  supabase: SupabaseClient,
+  userId: string
+) {
+  // Пока возвращаем пустой массив, так как таблица smart_notifications может не существовать
+  // В будущем можно добавить таблицу для хранения истории уведомлений
+  return new Response(
+    JSON.stringify([]),
+    {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    }
+  );
+}
+
+// POST /notifications/test - Отправить тестовое уведомление
+async function handleSendTestNotification(
+  req: Request,
+  supabase: SupabaseClient,
+  userId: string
+) {
+  // Получаем имя пользователя из Telegram или используем "Пользователь"
+  const userName = await getUserName(supabase, userId);
+  
+  const testMessage = `${userName} – это тестовое уведомление. Уведомления работают корректно! ✅`;
+
+  // Отправляем через Telegram Bot API, если настроено
+  const telegramBotToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
+  const { data: settings } = await supabase
+    .from("notification_settings")
+    .select("telegram_enabled, telegram_chat_id")
+    .eq("user_id", userId)
+    .single();
+
+  if (telegramBotToken && settings?.telegram_enabled && settings?.telegram_chat_id) {
+    try {
+      await sendTelegramMessage(telegramBotToken, settings.telegram_chat_id, testMessage);
+    } catch (error) {
+      console.error("Error sending Telegram notification:", error);
+    }
+  }
+
+  return new Response(
+    JSON.stringify({ success: true, message: "Test notification sent" }),
+    {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    }
+  );
+}
+
+// POST /notifications/send - Отправить персонализированное уведомление
+async function handleSendNotification(
+  req: Request,
+  supabase: SupabaseClient,
+  userId: string
+) {
+  const body = await req.json();
+  const { goal_id, type } = body;
+
+  if (!goal_id || !type) {
+    return new Response(
+      JSON.stringify({ error: "goal_id and type are required" }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  // Получаем цель
+  const { data: goal, error: goalError } = await supabase
+    .from("goals")
+    .select("*")
+    .eq("id", goal_id)
+    .eq("user_id", userId)
+    .single();
+
+  if (goalError || !goal) {
+    return new Response(
+      JSON.stringify({ error: "Goal not found" }),
+      {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  // Получаем имя пользователя
+  const userName = await getUserName(supabase, userId);
+
+  // Генерируем персонализированное сообщение
+  const personalizedMessage = generatePersonalizedMessage(
+    userName,
+    goal,
+    type as "reminder" | "motivation" | "congratulations" | "warning"
+  );
+
+  // Отправляем через Telegram Bot API, если настроено
+  const telegramBotToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
+  const { data: settings } = await supabase
+    .from("notification_settings")
+    .select("telegram_enabled, telegram_chat_id")
+    .eq("user_id", userId)
+    .single();
+
+  if (telegramBotToken && settings?.telegram_enabled && settings?.telegram_chat_id) {
+    try {
+      await sendTelegramMessage(telegramBotToken, settings.telegram_chat_id, personalizedMessage);
+    } catch (error) {
+      console.error("Error sending Telegram notification:", error);
+    }
+  }
+
+  return new Response(
+    JSON.stringify({ 
+      success: true, 
+      message: personalizedMessage,
+      personalized_message: personalizedMessage 
+    }),
+    {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    }
+  );
+}
+
+// Вспомогательная функция для получения имени пользователя
+async function getUserName(supabase: SupabaseClient, userId: string): Promise<string> {
+  // Пытаемся получить имя из базы данных (если есть таблица users)
+  // Или из Telegram Bot API по user_id
+  
+  // Парсим userId - если это Telegram ID (формат tg_123456789)
+  if (userId.startsWith("tg_")) {
+    const telegramId = userId.replace("tg_", "");
+    
+    // Пытаемся получить имя через Telegram Bot API
+    const telegramBotToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
+    if (telegramBotToken) {
+      try {
+        const response = await fetch(
+          `https://api.telegram.org/bot${telegramBotToken}/getChat?chat_id=${telegramId}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          if (data.ok && data.result) {
+            const firstName = data.result.first_name || "";
+            const lastName = data.result.last_name || "";
+            if (firstName) {
+              return lastName ? `${firstName} ${lastName}` : firstName;
+            }
+          }
+        }
+      } catch (error) {
+        console.warn("Error fetching user name from Telegram:", error);
+      }
+    }
+  }
+  
+  // Fallback: используем "Пользователь" или первую часть userId
+  return "Пользователь";
+}
+
+// Вспомогательная функция для генерации персонализированного сообщения
+function generatePersonalizedMessage(
+  userName: string,
+  goal: Goal,
+  type: "reminder" | "motivation" | "congratulations" | "warning"
+): string {
+  const remaining = Math.max(0, goal.target_value - (goal.current_value || 0));
+  const progressPercent = goal.target_value > 0 
+    ? Math.round(((goal.current_value || 0) / goal.target_value) * 100)
+    : 0;
+
+  // Расчет дней до дедлайна
+  let daysRemaining: number | null = null;
+  let isOverdue = false;
+  
+  if (goal.end_date) {
+    const endDate = new Date(goal.end_date);
+    const now = new Date();
+    const diffTime = endDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) {
+      isOverdue = true;
+      daysRemaining = Math.abs(diffDays);
+    } else {
+      daysRemaining = diffDays;
+    }
+  }
+
+  // Расчет ежедневного плана
+  let dailyPlan = 0;
+  if (daysRemaining !== null && daysRemaining > 0 && remaining > 0) {
+    dailyPlan = Math.ceil(remaining / daysRemaining);
+  }
+
+  switch (type) {
+    case "reminder": {
+      // Напоминание о дневном плане
+      if (goal.daily_plan) {
+        const dailyRemaining = Math.max(0, Math.ceil(goal.daily_plan) - (goal.current_value || 0));
+        return `${userName} – у тебя цель "${goal.title}", осталось ${dailyRemaining} ${getUnitForCategory(goal.category)} для выполнения дневного плана`;
+      }
+      return `${userName} – не забудь выполнить цель "${goal.title}" (${goal.current_value || 0}/${goal.target_value})`;
+    }
+
+    case "motivation": {
+      // Мотивация при отставании
+      if (isOverdue) {
+        return `${userName} – вы отстаете от графика. Цель "${goal.title}" просрочена на ${daysRemaining} ${pluralizeDays(daysRemaining!)}. Нужно делать ${dailyPlan > 0 ? dailyPlan : Math.ceil(remaining / 30)} ${getUnitForCategory(goal.category)} в день, чтобы догнать план`;
+      } else if (daysRemaining !== null && daysRemaining > 0) {
+        return `${userName} – вы отстаете от графика. Чтобы достичь цель "${goal.title}", осталось ${daysRemaining} ${pluralizeDays(daysRemaining)}. Нужно делать ${dailyPlan} ${getUnitForCategory(goal.category)} в день`;
+      }
+      return `${userName} – продолжайте в том же духе! Цель "${goal.title}" выполнена на ${progressPercent}%`;
+    }
+
+    case "congratulations": {
+      return `${userName} – поздравляем! Вы достигли цели "${goal.title}" 🎉`;
+    }
+
+    case "warning": {
+      if (isOverdue) {
+        return `${userName} – цель "${goal.title}" просрочена на ${daysRemaining} ${pluralizeDays(daysRemaining!)}. Пора активизироваться!`;
+      }
+      return `${userName} – цель "${goal.title}" требует внимания. Осталось ${remaining} ${getUnitForCategory(goal.category)}`;
+    }
+
+    default:
+      return `${userName} – у вас есть активная цель "${goal.title}"`;
+  }
+}
+
+// Вспомогательная функция для получения единицы измерения по категории
+function getUnitForCategory(category: string): string {
+  switch (category) {
+    case "prayer":
+      return "намазов";
+    case "quran":
+      return "страниц";
+    case "zikr":
+      return "зикров";
+    case "sadaqa":
+      return "раз";
+    case "knowledge":
+      return "уроков";
+    case "names_of_allah":
+      return "имен";
+    default:
+      return "раз";
+  }
+}
+
+// Вспомогательная функция для склонения дней
+function pluralizeDays(days: number): string {
+  const lastDigit = days % 10;
+  const lastTwoDigits = days % 100;
+  
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
+    return "дней";
+  }
+  
+  if (lastDigit === 1) {
+    return "день";
+  } else if (lastDigit >= 2 && lastDigit <= 4) {
+    return "дня";
+  } else {
+    return "дней";
+  }
+}
+
+// Вспомогательная функция для отправки сообщения в Telegram
+async function sendTelegramMessage(
+  botToken: string,
+  chatId: string,
+  message: string
+): Promise<void> {
+  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+  
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: message,
+      parse_mode: "HTML",
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`Telegram API error: ${error.description || "Unknown error"}`);
+  }
+}
+
+// GET /subscription - Получить тариф пользователя
+async function handleGetSubscription(
+  req: Request,
+  supabase: SupabaseClient,
+  userId: string
+) {
+  const { data, error } = await supabase
+    .from("user_subscriptions")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("is_active", true)
+    .single();
+
+  if (error && error.code !== "PGRST116") {
+    // PGRST116 = not found, это нормально для первого входа
+    throw error;
+  }
+
+  // Если подписки нет, возвращаем бесплатный тариф
+  const defaultSubscription = {
+    user_id: userId,
+    tier: "muslim" as const,
+    subscription_start: new Date().toISOString(),
+    subscription_end: null,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  // Проверяем, не истекла ли подписка
+  if (data && data.subscription_end) {
+    const endDate = new Date(data.subscription_end);
+    const now = new Date();
+    if (endDate < now) {
+      // Подписка истекла, возвращаем бесплатный тариф
+      return new Response(
+        JSON.stringify(defaultSubscription),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+  }
+
+  return new Response(
+    JSON.stringify(data || defaultSubscription),
+    {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    }
+  );
+}
+
+// PUT /subscription - Обновить тариф пользователя
+async function handleUpdateSubscription(
+  req: Request,
+  supabase: SupabaseClient,
+  userId: string
+) {
+  const body = await req.json();
+  const { tier, subscription_end } = body;
+
+  if (!tier || !["muslim", "mutahsin", "sahib_al_waqf"].includes(tier)) {
+    return new Response(
+      JSON.stringify({ error: "Invalid tier. Must be 'muslim', 'mutahsin', or 'sahib_al_waqf'" }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  const subscriptionData = {
+    user_id: userId,
+    tier: tier,
+    subscription_start: new Date().toISOString(),
+    subscription_end: subscription_end || null,
+    is_active: true,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data, error } = await supabase
+    .from("user_subscriptions")
+    .upsert(subscriptionData, { onConflict: "user_id" })
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return new Response(
+    JSON.stringify(data),
+    {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    }
+  );
 }
 
 

@@ -44,12 +44,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale/ru";
 
-// TODO: Получить тариф пользователя из API или контекста
-// Пока используем заглушку
-const getUserTier = (): "muslim" | "mutahsin" | "sahib_al_waqf" => {
-  // В реальном приложении это должно приходить из API
-  return "sahib_al_waqf"; // Для тестирования
-};
+import { getUserTier, isPremium } from "@/lib/subscription";
 
 interface GroupGoalsProps {
   goals?: Goal[];
@@ -67,15 +62,23 @@ export const GroupGoals = ({ goals = [], onRefresh }: GroupGoalsProps) => {
   const [groupGoal, setGroupGoal] = useState<Goal | null>(null);
   const [inviteCode, setInviteCode] = useState("");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
-
-  const userTier = getUserTier();
-  const isPremium = userTier === "sahib_al_waqf";
+  const [userTier, setUserTier] = useState<"muslim" | "mutahsin" | "sahib_al_waqf">("muslim");
+  const [isPremiumUser, setIsPremiumUser] = useState(false);
 
   useEffect(() => {
-    if (isPremium) {
+    const loadTier = async () => {
+      const tier = await getUserTier();
+      setUserTier(tier);
+      setIsPremiumUser(await isPremium());
+    };
+    loadTier();
+  }, []);
+
+  useEffect(() => {
+    if (isPremiumUser) {
       loadGroups();
     }
-  }, [isPremium]);
+  }, [isPremiumUser]);
 
   const loadGroups = async () => {
     setLoading(true);
@@ -163,7 +166,7 @@ export const GroupGoals = ({ goals = [], onRefresh }: GroupGoalsProps) => {
     setGroupGoal(goal || null);
   };
 
-  if (!isPremium) {
+  if (!isPremiumUser) {
     return (
       <Card className="bg-gradient-card border-border/50">
         <CardHeader>

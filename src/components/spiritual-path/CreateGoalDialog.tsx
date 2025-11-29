@@ -23,6 +23,7 @@ interface CreateGoalDialogProps {
   onOpenChange?: (open: boolean) => void;
   onGoalCreated?: () => void;
   children?: ReactNode;
+  initialGoal?: Goal; // Для редактирования существующей цели
 }
 
 const CATEGORIES: Array<{ value: GoalCategory; label: string; icon: string }> = [
@@ -199,6 +200,27 @@ export const CreateGoalDialog = ({ open, onOpenChange, onGoalCreated, children }
       return;
     }
 
+    // Проверка лимита целей для бесплатных пользователей (только при создании)
+    if (!isEditMode) {
+      try {
+        const { getUserTier } = await import("@/lib/subscription");
+        const tier = await getUserTier();
+        if (tier === "muslim") {
+          const allGoals = await spiritualPathAPI.getGoals("active");
+          if (allGoals.length >= 5) {
+            toast({
+              title: "Достигнут лимит целей",
+              description: "Перейдите на PRO версию для неограниченного количества целей",
+              variant: "destructive",
+            });
+            return;
+          }
+        }
+      } catch (error) {
+        console.error("Error checking goal limit:", error);
+      }
+    }
+
     setLoading(true);
     try {
       const finalEndDate = period === "custom" ? endDate : calculateEndDate(period, startDate);
@@ -216,7 +238,32 @@ export const CreateGoalDialog = ({ open, onOpenChange, onGoalCreated, children }
         finalTitle = `Выучить ${title}`;
       }
 
-      await spiritualPathAPI.createGoal({
+      if (isEditMode && initialGoal) {
+        // Редактирование существующей цели
+        await spiritualPathAPI.updateGoal(initialGoal.id, {
+          title: finalTitle,
+          description: description || selectedItemData?.translation || undefined,
+          category: category as GoalCategory,
+          knowledge_subcategory: category === "knowledge" ? (knowledgeSubcategory as KnowledgeSubcategory) : undefined,
+          type,
+          period,
+          metric,
+          target_value: targetValue,
+          start_date: startDate,
+          end_date: finalEndDate,
+          linked_counter_type: linkedCounterType || undefined,
+          daily_plan: dailyPlan || undefined,
+          item_id: selectedItemId || undefined,
+          item_type: selectedItemType,
+          item_data: selectedItemData || undefined,
+          is_learning: isLearning,
+        });
+        toast({
+          title: "Цель обновлена!",
+        });
+      } else {
+        // Создание новой цели
+        await spiritualPathAPI.createGoal({
         title: finalTitle,
         description: description || selectedItemData?.translation || undefined,
         category: category as GoalCategory,
@@ -284,7 +331,7 @@ export const CreateGoalDialog = ({ open, onOpenChange, onGoalCreated, children }
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Target className="w-5 h-5 text-primary" />
-            Создать цель
+            {isEditMode ? "Редактировать цель" : "Создать цель"}
           </DialogTitle>
           <DialogDescription>
             Установите цель для отслеживания вашего духовного роста

@@ -26,6 +26,13 @@ import { cn } from "@/lib/utils";
 import { PrayerTimesWidget } from "@/components/prayer/PrayerTimesWidget";
 import { AyahOfTheDay } from "@/components/quran/AyahOfTheDay";
 import { WeeklyChallenges } from "@/components/challenges/WeeklyChallenges";
+import { getNamesOfAllah } from "@/lib/dhikr-data";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
+import { format, isToday, isTomorrow, addDays, differenceInDays } from "date-fns";
+import { ru } from "date-fns/locale";
 
 const computePrayerProgress = (userData: ReturnType<typeof useUserData>["userData"]) => {
   if (!userData) {
@@ -221,6 +228,7 @@ export const OverviewDashboard = ({ onNavigateToCalculator }: OverviewDashboardP
   const [streaks, setStreaks] = useState<Streak[]>([]);
   const [goalsLoading, setGoalsLoading] = useState(true);
   const [showContent, setShowContent] = useState(false);
+  const [namesOfAllah, setNamesOfAllah] = useState<Array<{ id: string; arabic: string; translation: string; number: number }>>([]);
 
   useEffect(() => {
     // Delay content animation
@@ -236,6 +244,7 @@ export const OverviewDashboard = ({ onNavigateToCalculator }: OverviewDashboardP
         const results = await Promise.allSettled([
           spiritualPathAPI.getGoals("active"),
           spiritualPathAPI.getStreaks(),
+          getNamesOfAllah(),
         ]);
         
         if (!mounted) return;
@@ -262,6 +271,17 @@ export const OverviewDashboard = ({ onNavigateToCalculator }: OverviewDashboardP
         } else {
           console.error("Failed to load streaks:", results[1].reason);
           setStreaks([]);
+        }
+
+        // Обрабатываем 99 имен Аллаха
+        if (results[2].status === "fulfilled") {
+          const names = results[2].value.slice(0, 3); // Показываем первые 3 имени
+          setNamesOfAllah(names.map(n => ({
+            id: n.id,
+            arabic: n.arabic || "",
+            translation: n.translation || "",
+            number: n.number || 0
+          })));
         }
       } catch (error) {
         console.error("Unexpected error loading dashboard data:", error);
@@ -411,6 +431,174 @@ export const OverviewDashboard = ({ onNavigateToCalculator }: OverviewDashboardP
 
       {/* Prayer Times Widget */}
       <PrayerTimesWidget compact city="Москва" />
+
+      {/* 99 имен Аллаха - компактный блок */}
+      {namesOfAllah.length > 0 && (
+        <Card className="bg-gradient-to-br from-yellow-500/10 via-amber-500/10 to-orange-500/10 border-yellow-500/20">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500 to-amber-500 flex items-center justify-center">
+                  <Star className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">99 имен Аллаха</h3>
+                  <p className="text-xs text-muted-foreground">Асма уль-Хусна</p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/goals?category=names_of_allah")}
+              >
+                Все имена
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {namesOfAllah.map((name) => (
+                <div
+                  key={name.id}
+                  className="flex items-center justify-between p-2 rounded-lg bg-background/50 hover:bg-background/80 transition-colors cursor-pointer"
+                  onClick={() => navigate("/dhikr?item=" + name.id)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center text-xs font-bold text-yellow-600">
+                      {name.number}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{name.arabic}</p>
+                      <p className="text-xs text-muted-foreground">{name.translation}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Календарь событий с активными целями */}
+      <Card className="bg-gradient-card border-border/50">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-primary" />
+              <h3 className="font-semibold text-foreground">Ближайшие цели</h3>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/goals")}
+            >
+              Все цели
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
+          
+          {goals.length > 0 ? (
+            <div className="space-y-2">
+              {goals
+                .filter(g => g.status === "active" && g.end_date)
+                .sort((a, b) => {
+                  const dateA = new Date(a.end_date!).getTime();
+                  const dateB = new Date(b.end_date!).getTime();
+                  return dateA - dateB;
+                })
+                .slice(0, 3)
+                .map((goal) => {
+                  const endDate = new Date(goal.end_date!);
+                  const daysUntil = differenceInDays(endDate, new Date());
+                  const isOverdue = daysUntil < 0;
+                  const isUrgent = daysUntil >= 0 && daysUntil <= 3;
+                  const progressPercent = goal.target_value > 0
+                    ? Math.min(100, (goal.current_value / goal.target_value) * 100)
+                    : 0;
+
+                  return (
+                    <div
+                      key={goal.id}
+                      className={cn(
+                        "p-3 rounded-lg border transition-all cursor-pointer hover:bg-secondary/50",
+                        isOverdue && "border-red-500/50 bg-red-500/5",
+                        isUrgent && !isOverdue && "border-yellow-500/50 bg-yellow-500/5",
+                        !isOverdue && !isUrgent && "border-border/50"
+                      )}
+                      onClick={() => navigate(`/goals?goal=${goal.id}`)}
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-medium text-sm text-foreground truncate">{goal.title}</p>
+                            {isOverdue && (
+                              <Badge variant="destructive" className="text-xs">Просрочено</Badge>
+                            )}
+                            {isUrgent && !isOverdue && (
+                              <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-600">
+                                Срочно
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {isToday(endDate) && "Сегодня"}
+                              {isTomorrow(endDate) && "Завтра"}
+                              {!isToday(endDate) && !isTomorrow(endDate) && format(endDate, "dd.MM", { locale: ru })}
+                            </div>
+                            {daysUntil >= 0 && (
+                              <span>{daysUntil === 0 ? "Последний день" : `Осталось ${daysUntil} ${daysUntil === 1 ? "день" : daysUntil < 5 ? "дня" : "дней"}`}</span>
+                            )}
+                            {isOverdue && (
+                              <span className="text-red-500">Просрочено на {Math.abs(daysUntil)} {Math.abs(daysUntil) === 1 ? "день" : "дня"}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex-shrink-0">
+                          {isOverdue ? (
+                            <AlertCircle className="w-5 h-5 text-red-500" />
+                          ) : (
+                            <CheckCircle2 className={cn(
+                              "w-5 h-5",
+                              isUrgent ? "text-yellow-500" : "text-primary"
+                            )} />
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Прогресс</span>
+                          <span className="font-medium">{Math.round(progressPercent)}%</span>
+                        </div>
+                        <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                          <div
+                            className={cn(
+                              "h-full transition-all",
+                              isOverdue ? "bg-red-500" : isUrgent ? "bg-yellow-500" : "bg-primary"
+                            )}
+                            style={{ width: `${progressPercent}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <Calendar className="w-12 h-12 mx-auto mb-2 text-muted-foreground opacity-50" />
+              <p className="text-sm text-muted-foreground mb-3">Нет активных целей</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/goals")}
+              >
+                Создать цель
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* AI Assistant Card with animations */}
       <button

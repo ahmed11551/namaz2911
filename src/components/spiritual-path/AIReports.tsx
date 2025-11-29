@@ -25,22 +25,22 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale/ru";
 
-// Получить тариф пользователя из localStorage
-const getUserTier = (): "muslim" | "mutahsin" | "sahib_al_waqf" => {
-  const storedTier = localStorage.getItem("user_tier");
-  if (storedTier === "muslim" || storedTier === "mutahsin" || storedTier === "sahib_al_waqf") {
-    return storedTier;
-  }
-  // По умолчанию - базовый тариф
-  return "muslim";
-};
+import { getUserTier } from "@/lib/subscription";
 
 export const AIReports = () => {
   const { toast } = useToast();
   const [report, setReport] = useState<AIReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [reportType, setReportType] = useState<"weekly" | "monthly" | "custom">("weekly");
-  const userTier = getUserTier();
+  const [userTier, setUserTier] = useState<"muslim" | "mutahsin" | "sahib_al_waqf">("muslim");
+
+  useEffect(() => {
+    const loadTier = async () => {
+      const tier = await getUserTier();
+      setUserTier(tier);
+    };
+    loadTier();
+  }, []);
 
   useEffect(() => {
     loadReport();

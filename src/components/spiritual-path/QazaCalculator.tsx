@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { Calculator, CalendarIcon, Map, Plus, CheckCircle2 } from "lucide-react";
+import { Calculator, CalendarIcon, Map, Plus, CheckCircle2, Crown, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { spiritualPathAPI, localStorageAPI } from "@/lib/api";
 import { calculatePrayerDebt } from "@/lib/prayer-calculator";
@@ -18,11 +18,24 @@ import type { TravelPeriod } from "@/types/prayer-debt";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useUserData } from "@/hooks/useUserData";
+import { getUserTier, isPro } from "@/lib/subscription";
 
 export const QazaCalculator = () => {
   const { toast } = useToast();
   const { userData } = useUserData();
   const [mode, setMode] = useState<"manual" | "auto">("manual");
+  const [userTier, setUserTier] = useState<"muslim" | "mutahsin" | "sahib_al_waqf">("muslim");
+  const [isProUser, setIsProUser] = useState(false);
+
+  useEffect(() => {
+    const loadTier = async () => {
+      const tier = await getUserTier();
+      const pro = await isPro();
+      setUserTier(tier);
+      setIsProUser(pro);
+    };
+    loadTier();
+  }, []);
   const [manualCount, setManualCount] = useState<number>(0);
   
   // Для авторасчета
@@ -191,10 +204,22 @@ export const QazaCalculator = () => {
         </p>
       </div>
 
-      <Tabs value={mode} onValueChange={(v) => setMode(v as "manual" | "auto")}>
+      <Tabs value={mode} onValueChange={(v) => {
+        if (v === "auto" && !isProUser) {
+          toast({
+            title: "Требуется PRO тариф",
+            description: "Авторасчет доступен только для тарифов 'Мутахсин' и 'Сахиб аль-Вакф'",
+            variant: "default",
+          });
+          return;
+        }
+        setMode(v as "manual" | "auto");
+      }}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="manual">Ручной ввод</TabsTrigger>
-          <TabsTrigger value="auto">Авторасчет</TabsTrigger>
+          <TabsTrigger value="auto" disabled={!isProUser}>
+            Авторасчет {!isProUser && <Lock className="w-3 h-3 ml-1" />}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="manual" className="space-y-4">
@@ -226,11 +251,35 @@ export const QazaCalculator = () => {
         </TabsContent>
 
         <TabsContent value="auto" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Авторасчет на основе данных</CardTitle>
-              <CardDescription>
-                Расчет на основе пола, даты рождения и даты начала практики
+          {!isProUser && (
+            <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Crown className="w-5 h-5 text-yellow-500" />
+                  Обновите тариф для авторасчета
+                </CardTitle>
+                <CardDescription>
+                  Интеллектуальный калькулятор каза доступен только для тарифов "Мутахсин" и "Сахиб аль-Вакф"
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" onClick={() => {
+                  toast({
+                    title: "Обновление тарифа",
+                    description: "Перейдите в настройки для обновления тарифа",
+                  });
+                }}>
+                  Обновить тариф
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+          {isProUser && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Авторасчет на основе данных</CardTitle>
+                <CardDescription>
+                  Расчет на основе пола, даты рождения и даты начала практики
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -328,6 +377,7 @@ export const QazaCalculator = () => {
               </Button>
             </CardContent>
           </Card>
+          )}
         </TabsContent>
       </Tabs>
 
