@@ -1615,9 +1615,9 @@ export const spiritualPathAPI = {
     }
 
     try {
-      // Используем AbortController для timeout
+      // Используем AbortController для timeout (уменьшен до 2 секунд для быстроты)
       const controller = new AbortController();
-      let timeoutId: NodeJS.Timeout | null = setTimeout(() => controller.abort(), 5000); // 5 секунд timeout
+      let timeoutId: NodeJS.Timeout | null = setTimeout(() => controller.abort(), 2000); // 2 секунды timeout
       
       const response = await fetch(
         `${SUPABASE_FUNCTIONS_URL}/spiritual-path-api/goals${status ? `?status=${status}` : ""}`,
@@ -1837,9 +1837,9 @@ export const spiritualPathAPI = {
     }
 
     try {
-      // Используем AbortController для timeout
+      // Используем AbortController для timeout (уменьшен до 2 секунд)
       const controller = new AbortController();
-      let timeoutId: NodeJS.Timeout | null = setTimeout(() => controller.abort(), 5000); // 5 секунд timeout
+      let timeoutId: NodeJS.Timeout | null = setTimeout(() => controller.abort(), 2000); // 2 секунды timeout
       
       const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/spiritual-path-api/badges`, {
         method: "GET",
@@ -1881,9 +1881,9 @@ export const spiritualPathAPI = {
     }
 
     try {
-      // Используем AbortController для timeout
+      // Используем AbortController для timeout (уменьшен до 2 секунд)
       const controller = new AbortController();
-      let timeoutId: NodeJS.Timeout | null = setTimeout(() => controller.abort(), 5000); // 5 секунд timeout
+      let timeoutId: NodeJS.Timeout | null = setTimeout(() => controller.abort(), 2000); // 2 секунды timeout
       
       const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/spiritual-path-api/streaks`, {
         method: "GET",

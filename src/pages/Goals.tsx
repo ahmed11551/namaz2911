@@ -1,6 +1,6 @@
 // Страница Цели и Привычки - дизайн Fintrack (тёмная тема)
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { MainHeader } from "@/components/layout/MainHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Button } from "@/components/ui/button";
@@ -279,8 +279,26 @@ const Goals = () => {
   }, []);
 
   useEffect(() => {
+    // Сначала загружаем из кэша мгновенно (синхронно)
+    try {
+      const cachedGoals = spiritualPathAPI.getGoalsFromLocalStorage("all");
+      if (Array.isArray(cachedGoals)) {
+        setGoals(cachedGoals);
+        setLoading(false); // Показываем страницу сразу с кэшем
+      } else {
+        setLoading(false); // Показываем страницу даже если кэш пуст
+      }
+    } catch (e) {
+      console.warn("Error loading cached goals:", e);
+      setLoading(false); // Показываем страницу в любом случае
+    }
+
+    // Затем загружаем свежие данные в фоне (асинхронно)
     if (!loadingRef.current) {
-      loadData();
+      // Небольшая задержка, чтобы UI успел отрендериться
+      setTimeout(() => {
+        loadData();
+      }, 100);
     }
     
     return () => {
@@ -297,14 +315,14 @@ const Goals = () => {
     }
     
     loadingRef.current = true;
-    setLoading(true);
+    // НЕ устанавливаем loading в true, чтобы не блокировать UI
     
-    // Общий таймаут для всей загрузки (максимум 8 секунд)
+    // Уменьшенный таймаут для всей загрузки (максимум 2 секунды)
     const timeoutPromise = new Promise<void>((resolve) => {
       setTimeout(() => {
         console.warn("Load data timeout reached");
         resolve();
-      }, 8000);
+      }, 2000);
     });
 
     try {
@@ -334,25 +352,11 @@ const Goals = () => {
       const results = await Promise.race([loadPromise, timeoutPromise.then(() => null)]);
 
       if (results === null) {
-        // Таймаут - загружаем из кэша
+        // Таймаут - используем уже загруженный кэш (не меняем состояние)
         console.warn("Loading timeout, using cached data");
-        try {
-          const cachedGoals = spiritualPathAPI.getGoalsFromLocalStorage("all");
-          setGoals(Array.isArray(cachedGoals) ? cachedGoals : []);
-        } catch (e) {
-          console.warn("Error loading cached goals:", e);
-          setGoals([]); // Устанавливаем пустой массив при ошибке
-        }
         setStreaks([]);
         setBadges([]);
-        // Не показываем toast на мобильных при таймауте
-        if (window.innerWidth > 640) {
-          toast({
-            title: "Предупреждение",
-            description: "Загрузка заняла слишком много времени. Используются сохраненные данные.",
-            variant: "default",
-          });
-        }
+        // Не показываем toast - данные уже есть из кэша
       } else {
         // Обрабатываем цели
         if (results[0].status === "fulfilled") {
@@ -418,34 +422,49 @@ const Goals = () => {
       }
     } finally {
       loadingRef.current = false;
-      setLoading(false);
+      // НЕ устанавливаем loading в false здесь, так как UI уже показан
     }
   };
 
-  // Статистика (с защитой от undefined/null)
-  const safeStreaks = Array.isArray(streaks) ? streaks : [];
-  const safeGoals = Array.isArray(goals) ? goals : [];
-  const safeBadges = Array.isArray(badges) ? badges : [];
+  // Статистика (с защитой от undefined/null и мемоизацией)
+  const safeStreaks = useMemo(() => Array.isArray(streaks) ? streaks : [], [streaks]);
+  const safeGoals = useMemo(() => Array.isArray(goals) ? goals : [], [goals]);
+  const safeBadges = useMemo(() => Array.isArray(badges) ? badges : [], [badges]);
   
-  const currentStreak = safeStreaks.find(s => s.streak_type === "daily_all")?.current_streak || 0;
-  const longestStreak = safeStreaks.find(s => s.streak_type === "daily_all")?.longest_streak || currentStreak;
-  const completedGoals = safeGoals.filter(g => g?.status === "completed").length;
-  const activeGoals = safeGoals.filter(g => g?.status === "active").length;
-  const totalBadges = safeBadges.length;
+  const currentStreak = useMemo(() => 
+    safeStreaks.find(s => s.streak_type === "daily_all")?.current_streak || 0,
+    [safeStreaks]
+  );
+  const longestStreak = useMemo(() => 
+    safeStreaks.find(s => s.streak_type === "daily_all")?.longest_streak || currentStreak,
+    [safeStreaks, currentStreak]
+  );
+  const completedGoals = useMemo(() => 
+    safeGoals.filter(g => g?.status === "completed").length,
+    [safeGoals]
+  );
+  const activeGoals = useMemo(() => 
+    safeGoals.filter(g => g?.status === "active").length,
+    [safeGoals]
+  );
+  const totalBadges = useMemo(() => safeBadges.length, [safeBadges]);
 
-  const filteredGoals = safeGoals.filter((goal) => {
-    if (!goal || !goal.title) return false;
-    const matchesSearch = 
-      goal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      goal.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesFilter = 
-      filter === "all" ||
-      (filter === "active" && goal.status === "active") ||
-      (filter === "completed" && goal.status === "completed");
-    
-    return matchesSearch && matchesFilter;
-  });
+  // Мемоизация фильтрации для производительности
+  const filteredGoals = useMemo(() => {
+    return safeGoals.filter((goal) => {
+      if (!goal || !goal.title) return false;
+      const matchesSearch = 
+        goal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        goal.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesFilter = 
+        filter === "all" ||
+        (filter === "active" && goal.status === "active") ||
+        (filter === "completed" && goal.status === "completed");
+      
+      return matchesSearch && matchesFilter;
+    });
+  }, [safeGoals, searchQuery, filter]);
 
   const handleGoalClick = (goal: Goal) => {
     if (goal.category === "zikr" || goal.category === "quran" || goal.linked_counter_type) {
@@ -579,7 +598,10 @@ const Goals = () => {
     }
   };
 
-  if (loading) {
+  // Показываем loading только если нет данных в кэше
+  const hasCachedData = goals.length > 0 || streaks.length > 0 || badges.length > 0;
+  
+  if (loading && !hasCachedData) {
     return (
       <div className="min-h-screen bg-background pb-20 sm:pb-28">
         <MainHeader />

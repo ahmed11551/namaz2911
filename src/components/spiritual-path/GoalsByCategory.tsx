@@ -52,8 +52,26 @@ export const GoalsByCategory = () => {
   const [pendingTasbih, setPendingTasbih] = useState<PendingTasbihEntry[]>([]);
 
   useEffect(() => {
-    loadGoals();
+    // Сначала загружаем из кэша мгновенно (синхронно)
+    try {
+      const cachedGoals = spiritualPathAPI.getGoalsFromLocalStorage("all");
+      if (Array.isArray(cachedGoals)) {
+        setGoals(cachedGoals);
+        setLoading(false); // Показываем сразу с кэшем
+      } else {
+        setLoading(false); // Показываем даже если кэш пуст
+      }
+    } catch (e) {
+      console.warn("Error loading cached goals:", e);
+      setLoading(false); // Показываем в любом случае
+    }
+
+    // Затем загружаем свежие данные в фоне (асинхронно)
     loadPendingTasbihEntries();
+    // Небольшая задержка для загрузки целей, чтобы UI успел отрендериться
+    setTimeout(() => {
+      loadGoals();
+    }, 100);
     
     // Слушаем обновления незавершенных тасбих-сессий
     const handlePendingUpdate = () => {
@@ -108,11 +126,11 @@ export const GoalsByCategory = () => {
   };
 
   const loadGoals = async () => {
-    setLoading(true);
+    // НЕ устанавливаем loading в true - UI уже показан с кэшем
     try {
-      // Таймаут для загрузки (5 секунд)
+      // Уменьшенный таймаут для загрузки (2 секунды)
       const timeoutPromise = new Promise<Goal[]>((_, reject) => {
-        setTimeout(() => reject(new Error("Timeout")), 5000);
+        setTimeout(() => reject(new Error("Timeout")), 2000);
       });
 
       const goalsPromise = spiritualPathAPI.getGoals();
@@ -120,24 +138,8 @@ export const GoalsByCategory = () => {
       setGoals(Array.isArray(allGoals) ? allGoals : []);
     } catch (error) {
       console.error("Error loading goals:", error);
-      // Пытаемся загрузить из localStorage при ошибке
-      try {
-        const cachedGoals = spiritualPathAPI.getGoalsFromLocalStorage("all");
-        setGoals(Array.isArray(cachedGoals) ? cachedGoals : []);
-      } catch (e) {
-        console.warn("Error loading cached goals:", e);
-        setGoals([]);
-      }
-      // Не показываем toast на мобильных, чтобы не раздражать пользователя
-      if (window.innerWidth > 640) {
-        toast({
-          title: "Ошибка",
-          description: "Не удалось загрузить цели. Используются сохраненные данные.",
-          variant: "destructive",
-        });
-      }
-    } finally {
-      setLoading(false);
+      // Не меняем состояние - данные уже есть из кэша
+      // Не показываем toast - пользователь уже видит данные
     }
   };
 
