@@ -1548,12 +1548,19 @@ export const spiritualPathAPI = {
   // Цели
   async getGoals(status?: string): Promise<Goal[]> {
     const userId = getUserId();
+    
+    // Сначала загружаем из localStorage для мгновенного отображения
+    const cachedGoals = this.getGoalsFromLocalStorage(status);
+    
     if (!userId) {
-      // Fallback на localStorage
-      return this.getGoalsFromLocalStorage(status);
+      return cachedGoals;
     }
 
     try {
+      // Используем AbortController для timeout
+      const controller = new AbortController();
+      let timeoutId: NodeJS.Timeout | null = setTimeout(() => controller.abort(), 3000); // 3 секунды timeout
+      
       const response = await fetch(
         `${SUPABASE_FUNCTIONS_URL}/spiritual-path-api/goals${status ? `?status=${status}` : ""}`,
         {
@@ -1563,17 +1570,32 @@ export const spiritualPathAPI = {
             "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
             "apikey": SUPABASE_ANON_KEY,
           },
+          signal: controller.signal,
         }
       );
 
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+
       if (response.ok) {
-        return await response.json();
+        const goals = await response.json();
+        // Сохраняем в localStorage для кэширования
+        if (goals && Array.isArray(goals)) {
+          localStorage.setItem("spiritual_path_goals", JSON.stringify(goals));
+        }
+        return goals;
       }
     } catch (error) {
-      console.warn("Supabase API недоступен, используем localStorage:", error);
+      if (error instanceof Error && error.name === "AbortError") {
+        console.warn("Goals API timeout, using cached data");
+      } else {
+        console.warn("Supabase API недоступен, используем localStorage:", error);
+      }
     }
 
-    return this.getGoalsFromLocalStorage(status);
+    return cachedGoals;
   },
 
   async createGoal(goal: Omit<Goal, "id" | "user_id" | "created_at" | "updated_at">): Promise<Goal> {
@@ -1748,6 +1770,10 @@ export const spiritualPathAPI = {
     }
 
     try {
+      // Используем AbortController для timeout
+      const controller = new AbortController();
+      let timeoutId: NodeJS.Timeout | null = setTimeout(() => controller.abort(), 3000); // 3 секунды timeout
+      
       const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/spiritual-path-api/badges`, {
         method: "GET",
         headers: {
@@ -1755,13 +1781,23 @@ export const spiritualPathAPI = {
           "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
           "apikey": SUPABASE_ANON_KEY,
         },
+        signal: controller.signal,
       });
+
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
 
       if (response.ok) {
         return await response.json();
       }
     } catch (error) {
-      console.warn("Supabase API недоступен:", error);
+      if (error instanceof Error && error.name === "AbortError") {
+        console.warn("Badges API timeout");
+      } else {
+        console.warn("Supabase API недоступен:", error);
+      }
     }
 
     return [];
@@ -1775,6 +1811,10 @@ export const spiritualPathAPI = {
     }
 
     try {
+      // Используем AbortController для timeout
+      const controller = new AbortController();
+      let timeoutId: NodeJS.Timeout | null = setTimeout(() => controller.abort(), 3000); // 3 секунды timeout
+      
       const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/spiritual-path-api/streaks`, {
         method: "GET",
         headers: {
@@ -1782,13 +1822,23 @@ export const spiritualPathAPI = {
           "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
           "apikey": SUPABASE_ANON_KEY,
         },
+        signal: controller.signal,
       });
+
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
 
       if (response.ok) {
         return await response.json();
       }
     } catch (error) {
-      console.warn("Supabase API недоступен:", error);
+      if (error instanceof Error && error.name === "AbortError") {
+        console.warn("Streaks API timeout");
+      } else {
+        console.warn("Supabase API недоступен:", error);
+      }
     }
 
     return [];

@@ -273,15 +273,32 @@ const Goals = () => {
 
   const loadData = async () => {
     setLoading(true);
+    
+    // Сначала загружаем из localStorage для мгновенного отображения
+    const cachedGoals = spiritualPathAPI.getGoalsFromLocalStorage("all");
+    if (cachedGoals.length > 0) {
+      setGoals(cachedGoals);
+      setLoading(false); // Показываем данные сразу
+    }
+    
     try {
-      const [goalsData, streaksData, badgesData] = await Promise.all([
+      // Затем загружаем свежие данные с API (с timeout)
+      const [goalsData, streaksData, badgesData] = await Promise.allSettled([
         spiritualPathAPI.getGoals("all"),
         spiritualPathAPI.getStreaks(),
         spiritualPathAPI.getBadges(),
       ]);
-      setGoals(goalsData);
-      setStreaks(streaksData);
-      setBadges(badgesData);
+      
+      // Обновляем только если данные успешно загружены
+      if (goalsData.status === "fulfilled") {
+        setGoals(goalsData.value);
+      }
+      if (streaksData.status === "fulfilled") {
+        setStreaks(streaksData.value);
+      }
+      if (badgesData.status === "fulfilled") {
+        setBadges(badgesData.value);
+      }
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
@@ -289,12 +306,23 @@ const Goals = () => {
     }
   };
 
-  // Статистика
-  const currentStreak = streaks.find(s => s.streak_type === "daily_all")?.current_streak || 0;
-  const longestStreak = streaks.find(s => s.streak_type === "daily_all")?.longest_streak || currentStreak;
-  const completedGoals = goals.filter(g => g.status === "completed").length;
-  const activeGoals = goals.filter(g => g.status === "active").length;
-  const totalBadges = badges.length;
+  // Статистика - мемоизирована для производительности
+  const stats = useMemo(() => {
+    const currentStreak = streaks.find(s => s.streak_type === "daily_all")?.current_streak || 0;
+    const longestStreak = streaks.find(s => s.streak_type === "daily_all")?.longest_streak || currentStreak;
+    const completedGoals = goals.filter(g => g.status === "completed");
+    const activeGoals = goals.filter(g => g.status === "active");
+    return {
+      currentStreak,
+      longestStreak,
+      completedGoals: completedGoals.length,
+      activeGoals: activeGoals.length,
+      totalBadges: badges.length,
+      completedGoalsArray: completedGoals,
+    };
+  }, [streaks, goals, badges]);
+  
+  const { currentStreak, longestStreak, completedGoals, activeGoals, totalBadges, completedGoalsArray } = stats;
 
   const filteredGoals = goals.filter((goal) => {
     const matchesSearch = 
@@ -579,7 +607,7 @@ const Goals = () => {
           <div className="flex gap-2">
             {[
               { id: "active", label: "Активные", count: activeGoals },
-              { id: "completed", label: "Готово", count: completedGoals.length },
+              { id: "completed", label: "Готово", count: completedGoals },
             ].map((tab) => (
               <button
                 key={tab.id}
