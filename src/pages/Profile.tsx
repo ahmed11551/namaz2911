@@ -51,7 +51,7 @@ import { Switch } from "@/components/ui/switch";
 // Типы настроек
 interface AppSettings {
   notifications: boolean;
-  darkTheme: boolean;
+  darkTheme: boolean; // Устарело, оставлено для совместимости
   language: "ru" | "en" | "ar";
   sounds: boolean;
 }
