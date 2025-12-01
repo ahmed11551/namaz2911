@@ -65,7 +65,7 @@ const LANGUAGES = [
 
 const getDefaultSettings = (): AppSettings => ({
   notifications: true,
-  darkTheme: true,
+    darkTheme: false, // Всегда светлая тема
   language: "ru",
   sounds: true,
 });
@@ -124,32 +124,12 @@ const Profile = () => {
   const [languageDialogOpen, setLanguageDialogOpen] = useState(false);
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
 
-  // Применяем тему при изменении и при загрузке
+  // Применяем светлую тему всегда
   useEffect(() => {
     const root = document.documentElement;
-    if (settings.darkTheme) {
-      root.classList.add("dark");
-      root.classList.remove("light");
-    } else {
-      root.classList.remove("dark");
-      root.classList.add("light");
-    }
-    // Сохраняем в data-атрибут для других компонентов
-    root.setAttribute("data-theme", settings.darkTheme ? "dark" : "light");
-  }, [settings.darkTheme]);
-
-  // Применяем тему при первой загрузке
-  useEffect(() => {
-    const root = document.documentElement;
-    const savedSettings = loadSettings();
-    if (savedSettings.darkTheme) {
-      root.classList.add("dark");
-      root.classList.remove("light");
-    } else {
-      root.classList.remove("dark");
-      root.classList.add("light");
-    }
-    root.setAttribute("data-theme", savedSettings.darkTheme ? "dark" : "light");
+    root.classList.remove("dark");
+    root.classList.add("light");
+    root.setAttribute("data-theme", "light");
   }, []);
 
   // Обновление настроек
@@ -199,16 +179,7 @@ const Profile = () => {
     }
   };
 
-  // Переключение темы
-  const toggleTheme = () => {
-    hapticFeedback.medium();
-    const newTheme = !settings.darkTheme;
-    updateSetting("darkTheme", newTheme);
-    toast({
-      title: newTheme ? "Тёмная тема" : "Светлая тема",
-      description: newTheme ? "Включена тёмная тема" : "Включена светлая тема",
-    });
-  };
+  // Переключение темы - убрано, теперь всегда светлая тема
 
   // Переключение звуков
   const toggleSounds = () => {
@@ -304,13 +275,6 @@ const Profile = () => {
           value: settings.notifications ? "Включены" : "Выкл", 
           color: settings.notifications ? "text-blue-400" : "text-muted-foreground",
           action: toggleNotifications,
-        },
-        { 
-          icon: settings.darkTheme ? Moon : Sun, 
-          label: "Тёмная тема", 
-          value: settings.darkTheme ? "Вкл" : "Выкл", 
-          color: settings.darkTheme ? "text-purple-400" : "text-amber-400",
-          action: toggleTheme,
         },
         { 
           icon: Globe, 
