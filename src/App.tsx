@@ -19,6 +19,7 @@ const AIChat = lazy(() => import("./pages/AIChat"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const History = lazy(() => import("./pages/History"));
+const SpiritualPath = lazy(() => import("./pages/SpiritualPath"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Компонент загрузки
@@ -72,6 +73,7 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<OnboardingGuard><Index /></OnboardingGuard>} />
                   <Route path="/goals" element={<ErrorBoundary><Goals /></ErrorBoundary>} />
+                  <Route path="/spiritual-path" element={<ErrorBoundary><SpiritualPath /></ErrorBoundary>} />
                   <Route path="/dhikr" element={<Dhikr />} />
                   <Route path="/tasbih" element={<Tasbih />} />
                   <Route path="/statistics" element={<Statistics />} />

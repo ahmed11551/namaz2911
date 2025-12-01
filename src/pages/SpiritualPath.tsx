@@ -1,6 +1,7 @@
 // Страница "Мой Духовный Путь"
 
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GoalFeed } from "@/components/spiritual-path/GoalFeed";
 import { CreateGoalDialog } from "@/components/spiritual-path/CreateGoalDialog";
@@ -21,13 +22,29 @@ import { cn } from "@/lib/utils";
 import { Target, Trophy, TrendingUp, BarChart3, Users, Calculator, Bell } from "lucide-react";
 
 export default function SpiritualPath() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get("tab") || "goals";
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("goals");
+  const [activeTab, setActiveTab] = useState(tabFromUrl);
   const tabsListRef = useRef<HTMLDivElement>(null);
   const [showLeftGradient, setShowLeftGradient] = useState(false);
   const [showRightGradient, setShowRightGradient] = useState(true);
+
+  // Синхронизация с URL параметром
+  useEffect(() => {
+    const urlTab = searchParams.get("tab");
+    if (urlTab && urlTab !== activeTab) {
+      setActiveTab(urlTab);
+    }
+  }, [searchParams]);
+
+  // Обновление URL при смене таба
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab);
+    setSearchParams({ tab: newTab }, { replace: true });
+  };
 
   // Проверка возможности прокрутки при загрузке
   useEffect(() => {
@@ -151,14 +168,14 @@ export default function SpiritualPath() {
     <div className="min-h-screen bg-gradient-hero pb-20 sm:pb-0">
       <MainHeader />
       
-      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 max-w-5xl pb-24 sm:pb-6 w-full overflow-x-hidden">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2 mb-2">
-              <Target className="w-8 h-8 text-primary" />
-              Мой Духовный Путь
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl pb-24 sm:pb-6 w-full overflow-x-hidden">
+        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-3xl font-bold flex items-center gap-2 mb-1 sm:mb-2">
+              <Target className="w-5 h-5 sm:w-8 sm:h-8 text-primary flex-shrink-0" />
+              <span className="truncate">Мой Духовный Путь</span>
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-xs sm:text-base text-muted-foreground">
               Отслеживайте цели, анализируйте прогресс и развивайтесь духовно
             </p>
           </div>
@@ -167,14 +184,14 @@ export default function SpiritualPath() {
             onOpenChange={setCreateDialogOpen}
             onGoalCreated={loadGoals}
           >
-            <Button className="flex items-center gap-2">
+            <Button size="sm" className="flex items-center gap-2 w-full sm:w-auto">
               <Plus className="w-4 h-4" />
-              Добавить цель
+              <span className="text-xs sm:text-sm">Добавить цель</span>
             </Button>
           </CreateGoalDialog>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           {/* Навигация с правильной горизонтальной прокруткой */}
           <div className="relative mb-6 w-full overflow-hidden">
             {/* Градиентные индикаторы прокрутки */}
@@ -225,23 +242,31 @@ export default function SpiritualPath() {
                   <TabsTrigger 
                     key={tab.value}
                     value={tab.value}
+                    onClick={() => {
+                      // Оптимизация: используем requestAnimationFrame для плавности
+                      requestAnimationFrame(() => {
+                        handleTabChange(tab.value);
+                      });
+                    }}
                     className={cn(
-                      "flex-shrink-0 flex items-center gap-1.5",
-                      "px-3 py-1.5",
-                      "text-sm font-medium",
+                      "flex-shrink-0 flex items-center gap-1 sm:gap-1.5",
+                      "px-2 sm:px-3 py-1 sm:py-1.5",
+                      "text-xs sm:text-sm font-medium",
                       "rounded-md",
-                      "transition-all",
+                      "transition-all duration-200",
                       "whitespace-nowrap",
                       "data-[state=active]:bg-background",
                       "data-[state=active]:text-foreground",
                       "data-[state=active]:shadow-sm",
                       "cursor-pointer",
-                      "select-none"
+                      "select-none",
+                      "touch-manipulation"
                     )}
                     style={{ touchAction: 'manipulation' }}
                   >
-                    <tab.icon className="w-4 h-4 shrink-0" />
-                    <span>{tab.label}</span>
+                    <tab.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                    <span className="hidden xs:inline">{tab.label}</span>
+                    <span className="xs:hidden">{tab.label.slice(0, 3)}</span>
                   </TabsTrigger>
                 ))}
               </TabsList>

@@ -478,7 +478,11 @@ export const GoalsByCategory = () => {
               <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className={cn("p-2 sm:p-2.5 rounded-xl bg-primary/10 flex-shrink-0", category.color)}>
+                    <div className={cn(
+                      "p-2 sm:p-2.5 rounded-xl bg-primary/10 flex-shrink-0 flex items-center justify-center",
+                      "w-10 h-10 sm:w-12 sm:h-12",
+                      category.color
+                    )}>
                       <category.icon className={cn("w-4 h-4 sm:w-5 sm:h-5", category.color)} />
                     </div>
                     <div className="flex-1 min-w-0">

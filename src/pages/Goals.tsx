@@ -1,6 +1,6 @@
 // Страница Цели и Привычки - дизайн Fintrack (тёмная тема)
 
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback, memo } from "react";
 import { MainHeader } from "@/components/layout/MainHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Button } from "@/components/ui/button";
@@ -136,8 +136,8 @@ const getCategoryColors = (category: string) => {
   }
 };
 
-// Компонент карточки цели (Fintrack style)
-const GoalCard = ({ 
+// Компонент карточки цели (Fintrack style) - мемоизирован для производительности
+const GoalCard = memo(({ 
   goal, 
   onClick,
   onQuickAdd,
@@ -244,7 +244,16 @@ const GoalCard = ({
       </div>
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Кастомная функция сравнения для оптимизации
+  return (
+    prevProps.goal.id === nextProps.goal.id &&
+    prevProps.goal.current_value === nextProps.goal.current_value &&
+    prevProps.goal.status === nextProps.goal.status
+  );
+});
+
+GoalCard.displayName = "GoalCard";
 
 const Goals = () => {
   const navigate = useNavigate();
@@ -301,12 +310,20 @@ const Goals = () => {
 
     // Затем загружаем свежие данные в фоне (асинхронно)
     if (!loadingRef.current && isMounted) {
-      // Небольшая задержка, чтобы UI успел отрендериться
-      timeoutId = setTimeout(() => {
+      // Используем requestIdleCallback для лучшей производительности
+      const scheduleLoad = () => {
         if (isMounted && !loadingRef.current) {
           loadData();
         }
-      }, 100);
+      };
+      
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        timeoutId = setTimeout(() => {
+          window.requestIdleCallback?.(scheduleLoad, { timeout: 200 });
+        }, 50);
+      } else {
+        timeoutId = setTimeout(scheduleLoad, 100);
+      }
     }
     
     return () => {
@@ -492,14 +509,17 @@ const Goals = () => {
     });
   }, [safeGoals, searchQuery, filter]);
 
-  const handleGoalClick = (goal: Goal) => {
+  const handleGoalClick = useCallback((goal: Goal) => {
     if (goal.category === "zikr" || goal.category === "quran" || goal.linked_counter_type) {
-      navigate(`/tasbih?goal=${goal.id}`);
+      // Оптимизация: используем requestAnimationFrame для плавного перехода
+      requestAnimationFrame(() => {
+        navigate(`/tasbih?goal=${goal.id}`);
+      });
     } else {
       setSelectedGoal(goal);
       setGoalDetailOpen(true);
     }
-  };
+  }, [navigate]);
 
   const handleQuickAdd = async (goal: Goal) => {
     try {
@@ -785,7 +805,9 @@ const Goals = () => {
         </div>
 
         {/* Goals by Category - компактный список по категориям */}
-        <GoalsByCategory />
+        <div className="space-y-3 sm:space-y-4">
+          <GoalsByCategory />
+        </div>
       </main>
 
       {/* FAB с анимациями */}
