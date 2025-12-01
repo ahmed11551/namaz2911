@@ -440,22 +440,28 @@ export const GoalsByCategory = () => {
         </Card>
       )}
 
-      {/* Блок пропущенных намазов */}
-      <Card className="bg-gradient-card border-border/50 rounded-xl">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <CircleDot className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-            Пропущенные намазы
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <Button 
-            variant="outline" 
-            className="w-full rounded-xl"
-            onClick={() => navigate("/spiritual-path?tab=qaza")}
-          >
-            Посчитать намазы
-          </Button>
+      {/* Блок пропущенных намазов - простой стиль */}
+      <Card className="border-2 border-orange-200 bg-orange-50 mb-4">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center text-2xl">
+                🕌
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Пропущенные намазы</h3>
+                <p className="text-sm text-gray-600">Рассчитайте и восполните</p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-2 border-gray-300 bg-white hover:bg-gray-50"
+              onClick={() => navigate("/spiritual-path?tab=qaza")}
+            >
+              Посчитать
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -472,32 +478,28 @@ export const GoalsByCategory = () => {
           return (
             <Card 
               key={category.id}
-              className="cursor-pointer hover:bg-secondary/50 transition-all duration-200 rounded-xl border-border/50 hover:border-primary/30 hover:shadow-md"
+              className="cursor-pointer hover:shadow-md transition-all duration-200 border-2 border-gray-200 bg-white"
               onClick={() => handleCategoryClick(category.id)}
             >
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex items-center justify-between gap-2">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className={cn(
-                      "p-2 sm:p-2.5 rounded-xl bg-primary/10 flex-shrink-0 flex items-center justify-center",
-                      "w-10 h-10 sm:w-12 sm:h-12",
-                      category.color
-                    )}>
-                      <category.icon className={cn("w-4 h-4 sm:w-5 sm:h-5", category.color)} />
+                    <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      <category.icon className="w-6 h-6 text-gray-700" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-sm sm:text-base truncate">{category.label}</h3>
-                      <p className="text-xs sm:text-sm text-muted-foreground">
+                      <h3 className="font-semibold text-base text-gray-900 truncate">{category.label}</h3>
+                      <p className="text-sm text-gray-500">
                         {categoryGoals.length} {categoryGoals.length === 1 ? "цель" : "целей"}
                         {categoryGoals.length > 0 && (
-                          <span className="ml-2">
+                          <span className="ml-2 text-gray-400">
                             • {Math.round(avgProgress)}% выполнено
                           </span>
                         )}
                       </p>
                     </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground flex-shrink-0" />
+                  <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>
