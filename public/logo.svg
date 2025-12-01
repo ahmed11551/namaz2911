@@ -1,0 +1,85 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Градиент для фона -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#059669;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#047857;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Градиент для купола -->
+    <linearGradient id="domeGradient" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F3F4F6;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Тень для купола -->
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+      <feOffset dx="0" dy="2" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- Свечение для звезды -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Фон с закруглёнными углами -->
+  <rect width="120" height="120" rx="24" fill="url(#bgGradient)"/>
+  
+  <!-- Тень под мечетью -->
+  <ellipse cx="60" cy="100" rx="35" ry="8" fill="#000000" opacity="0.2"/>
+  
+  <!-- Основание мечети -->
+  <rect x="30" y="70" width="60" height="20" rx="2" fill="white" opacity="0.95"/>
+  
+  <!-- Центральная арка -->
+  <path d="M 45 70 Q 60 50 75 70" stroke="white" stroke-width="3" fill="none" opacity="0.9"/>
+  <rect x="45" y="70" width="30" height="20" fill="white" opacity="0.95"/>
+  
+  <!-- Боковые арки -->
+  <path d="M 35 75 Q 40 65 45 75" stroke="white" stroke-width="2" fill="none" opacity="0.8"/>
+  <path d="M 75 75 Q 80 65 85 75" stroke="white" stroke-width="2" fill="none" opacity="0.8"/>
+  
+  <!-- Купол -->
+  <ellipse cx="60" cy="50" rx="22" ry="18" fill="url(#domeGradient)" filter="url(#shadow)"/>
+  <ellipse cx="60" cy="50" rx="20" ry="16" fill="none" stroke="white" stroke-width="1.5" opacity="0.6"/>
+  
+  <!-- Полумесяц на куполе -->
+  <path d="M 60 42 Q 55 40 50 42 Q 55 44 60 42" fill="#FCD34D" stroke="#F59E0B" stroke-width="0.5"/>
+  <circle cx="58" cy="41" r="1.5" fill="#FCD34D"/>
+  
+  <!-- Левый минарет -->
+  <rect x="25" y="40" width="6" height="35" rx="3" fill="white" opacity="0.95"/>
+  <rect x="26" y="40" width="4" height="25" rx="2" fill="url(#domeGradient)"/>
+  <circle cx="28" cy="38" r="3" fill="white" opacity="0.95"/>
+  <circle cx="28" cy="38" r="1.5" fill="#FCD34D"/>
+  
+  <!-- Правый минарет -->
+  <rect x="89" y="40" width="6" height="35" rx="3" fill="white" opacity="0.95"/>
+  <rect x="90" y="40" width="4" height="25" rx="2" fill="url(#domeGradient)"/>
+  <circle cx="92" cy="38" r="3" fill="white" opacity="0.95"/>
+  <circle cx="92" cy="38" r="1.5" fill="#FCD34D"/>
+  
+  <!-- Звёздочки (декоративные) -->
+  <g filter="url(#glow)">
+    <path d="M 20 25 L 21 28 L 24 28 L 21.5 30 L 22.5 33 L 20 31 L 17.5 33 L 18.5 30 L 16 28 L 19 28 Z" fill="#FCD34D" opacity="0.8"/>
+    <path d="M 100 25 L 101 28 L 104 28 L 101.5 30 L 102.5 33 L 100 31 L 97.5 33 L 98.5 30 L 96 28 L 99 28 Z" fill="#FCD34D" opacity="0.8"/>
+  </g>
+  
+  <!-- Тонкие линии для деталей -->
+  <line x1="30" y1="80" x2="90" y2="80" stroke="white" stroke-width="1" opacity="0.3"/>
+  <line x1="45" y1="70" x2="45" y2="90" stroke="white" stroke-width="1" opacity="0.3"/>
+  <line x1="75" y1="70" x2="75" y2="90" stroke="white" stroke-width="1" opacity="0.3"/>
+</svg>

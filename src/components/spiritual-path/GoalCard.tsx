@@ -1,0 +1,514 @@
+// Компонент карточки цели (детальный вид)
+
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { 
+  ChevronLeft,
+  CheckCircle2,
+  Trash2,
+  Edit,
+  Sparkles,
+  Calendar,
+  Bell,
+  BellOff,
+  Play,
+  BookOpen,
+  Pause
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { spiritualPathAPI } from "@/lib/api";
+import type { Goal } from "@/types/spiritual-path";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+interface GoalCardProps {
+  goal: Goal;
+  onBack: () => void;
+  onUpdate: () => void;
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  prayer: "Намаз",
+  quran: "Коран",
+  zikr: "Зикр/Дуа",
+  sadaqa: "Садака",
+  knowledge: "Знания",
+  names_of_allah: "99 имен Аллаха",
+};
+
+export const GoalCard = ({ goal, onBack, onUpdate }: GoalCardProps) => {
+  const { toast } = useToast();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [pauseDialogOpen, setPauseDialogOpen] = useState(false);
+  const [reminderEnabled, setReminderEnabled] = useState(goal.reminder_enabled || false);
+  const [reminderTime, setReminderTime] = useState(goal.reminder_time || "09:00");
+
+  const progressPercent = goal.target_value > 0 
+    ? Math.min(100, ((goal.current_value || 0) / goal.target_value) * 100) 
+    : 0;
+
+  const daysRemaining = goal.end_date 
+    ? Math.max(0, Math.ceil((new Date(goal.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
+    : null;
+
+  const isOverdue = goal.end_date && new Date(goal.end_date) < new Date() && goal.status === "active";
+  const isUrgent = daysRemaining !== null && daysRemaining <= 3 && daysRemaining > 0;
+
+  const handleDelete = async () => {
+    try {
+      await spiritualPathAPI.deleteGoal(goal.id);
+      toast({
+        title: "Цель удалена",
+      });
+      onBack();
+      onUpdate();
+    } catch (error) {
+      console.error("Error deleting goal:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить цель",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleComplete = async () => {
+    try {
+      await spiritualPathAPI.updateGoal(goal.id, { status: "completed" });
+      toast({
+        title: "Цель завершена!",
+        description: "Поздравляем с достижением цели!",
+      });
+      onBack();
+      onUpdate();
+    } catch (error) {
+      console.error("Error completing goal:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось завершить цель",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddProgress = async (value: number) => {
+    try {
+      await spiritualPathAPI.addProgress(goal.id, value);
+      toast({
+        title: "Прогресс обновлен",
+      });
+      onUpdate();
+    } catch (error) {
+      console.error("Error adding progress:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить прогресс",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleGoToTasbih = () => {
+    // Переход к тасбиху с предвыбранной целью
+    window.location.href = "/dhikr?goal=" + goal.id;
+  };
+
+  const handleToggleReminder = async () => {
+    const newValue = !reminderEnabled;
+    try {
+      await spiritualPathAPI.updateGoal(goal.id, { 
+        reminder_enabled: newValue,
+        reminder_time: reminderTime
+      });
+      setReminderEnabled(newValue);
+      toast({
+        title: newValue ? "Напоминание включено" : "Напоминание выключено",
+      });
+      onUpdate();
+    } catch (error) {
+      console.error("Error updating reminder:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить напоминание",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReminderTimeChange = async (newTime: string) => {
+    setReminderTime(newTime);
+    if (reminderEnabled) {
+      try {
+        await spiritualPathAPI.updateGoal(goal.id, { 
+          reminder_time: newTime
+        });
+        toast({
+          title: "Время напоминания обновлено",
+        });
+        onUpdate();
+      } catch (error) {
+        console.error("Error updating reminder time:", error);
+      }
+    }
+  };
+
+  const handlePause = async () => {
+    try {
+      await spiritualPathAPI.updateGoal(goal.id, { status: "paused" });
+      toast({
+        title: "Цель приостановлена",
+      });
+      onBack();
+      onUpdate();
+    } catch (error) {
+      console.error("Error pausing goal:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось приостановить цель",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEdit = () => {
+    // TODO: Реализовать редактирование цели
+    toast({
+      title: "Редактирование",
+      description: "Функция редактирования в разработке",
+    });
+    setEditDialogOpen(false);
+  };
+
+  return (
+    <>
+      <div className="space-y-4">
+        {/* Заголовок */}
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ChevronLeft className="w-5 h-5" />
+          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setDeleteDialogOpen(true)}
+            >
+              <Trash2 className="w-5 h-5 text-destructive" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Карточка цели */}
+        <Card className={cn(
+          "bg-gradient-card border-border/50",
+          isOverdue && "border-red-500/50",
+          isUrgent && "border-yellow-500/50"
+        )}>
+          <CardHeader>
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <Badge variant="outline" className="whitespace-nowrap">{CATEGORY_LABELS[goal.category]}</Badge>
+                  {isOverdue && (
+                    <Badge variant="destructive" className="whitespace-nowrap">Просрочено</Badge>
+                  )}
+                  {isUrgent && (
+                    <Badge variant="outline" className="border-yellow-500 text-yellow-600 whitespace-nowrap">
+                      Срочно
+                    </Badge>
+                  )}
+                </div>
+                <CardTitle className="text-2xl mb-2 break-words">{goal.title}</CardTitle>
+                {goal.description && (
+                  <p className="text-muted-foreground break-words">{goal.description}</p>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Отображение текста выбранного аята/дуа/зикра */}
+            {goal.item_data && (goal.category === "quran" || goal.category === "zikr" || goal.category === "names_of_allah") && (
+              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 space-y-3">
+                {goal.item_data.arabic && (
+                  <div className="text-right">
+                    <p className="text-2xl font-arabic leading-relaxed text-foreground">
+                      {goal.item_data.arabic}
+                    </p>
+                  </div>
+                )}
+                {goal.item_data.transcription && (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Транскрипция:</p>
+                    <p className="text-base text-foreground">{goal.item_data.transcription}</p>
+                  </div>
+                )}
+                {goal.item_data.translation && (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Перевод:</p>
+                    <p className="text-base text-foreground">{goal.item_data.translation}</p>
+                  </div>
+                )}
+                {goal.item_data.reference && (
+                  <div>
+                    <p className="text-xs text-muted-foreground italic">{goal.item_data.reference}</p>
+                  </div>
+                )}
+              </div>
+            )}
+            {/* Прогресс */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-semibold">
+                  {goal.current_value} / {goal.target_value} {goal.metric === "count" ? "раз" : "дней"}
+                </span>
+                <span className="text-muted-foreground">{Math.round(progressPercent)}%</span>
+              </div>
+              <Progress value={progressPercent} className="h-3" />
+            </div>
+
+            {/* Ежедневный план */}
+            {goal.daily_plan && (
+              <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+                <div className="flex items-center gap-2 mb-1">
+                  <Sparkles className="w-4 h-4 text-primary shrink-0" />
+                  <span className="font-semibold text-sm">Ежедневный план</span>
+                </div>
+                <p className="text-sm text-muted-foreground break-words">
+                  Делайте <strong className="text-primary">{Math.ceil(goal.daily_plan)}</strong>{" "}
+                  {goal.metric === "count" ? "в день" : "дней подряд"}
+                  {daysRemaining !== null && (
+                    <span> (осталось {daysRemaining} дн.)</span>
+                  )}
+                </p>
+              </div>
+            )}
+
+            {/* Даты */}
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <div>
+                  <div className="text-muted-foreground">Начало</div>
+                  <div className="font-semibold">
+                    {format(new Date(goal.start_date), "dd.MM.yyyy")}
+                  </div>
+                </div>
+              </div>
+              {goal.end_date && (
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <div className="text-muted-foreground">Окончание</div>
+                    <div className="font-semibold">
+                      {format(new Date(goal.end_date), "dd.MM.yyyy")}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Напоминания */}
+            <div className="p-3 rounded-lg bg-secondary/50 border border-border/50">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  {reminderEnabled ? (
+                    <Bell className="w-4 h-4 text-primary" />
+                  ) : (
+                    <BellOff className="w-4 h-4 text-muted-foreground" />
+                  )}
+                  <Label className="text-sm font-medium">Напоминания</Label>
+                </div>
+                <Switch
+                  checked={reminderEnabled}
+                  onCheckedChange={handleToggleReminder}
+                />
+              </div>
+              {reminderEnabled && (
+                <div className="mt-2">
+                  <Label className="text-xs text-muted-foreground mb-1 block">Время напоминания</Label>
+                  <Input
+                    type="time"
+                    value={reminderTime}
+                    onChange={(e) => handleReminderTimeChange(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Кнопки действий */}
+            <div className="space-y-2">
+              {goal.category === "prayer" ? (
+                // Для намазов - кнопки выполнения
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleAddProgress(1)}
+                    className="min-w-0"
+                  >
+                    <span className="truncate">Выполнил +1</span>
+                  </Button>
+                  <Button
+                    variant="default"
+                    onClick={() => handleAddProgress((goal.target_value || 0) - (goal.current_value || 0))}
+                    className="min-w-0"
+                  >
+                    <span className="truncate">Выполнил все</span>
+                  </Button>
+                </div>
+              ) : goal.linked_counter_type ? (
+                // Для целей с тасбихом
+                <Button
+                  variant="default"
+                  className="w-full min-w-0"
+                  onClick={handleGoToTasbih}
+                >
+                  <Play className="w-4 h-4 mr-2 shrink-0" />
+                  <span className="truncate">Перейти к тасбиху</span>
+                </Button>
+              ) : (
+                // Для остальных - ручное добавление прогресса
+                <Button
+                  variant="outline"
+                  className="w-full min-w-0"
+                  onClick={() => handleAddProgress(1)}
+                >
+                  <span className="truncate">Отметить выполнение</span>
+                </Button>
+              )}
+
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setCompleteDialogOpen(true)}
+                  disabled={goal.current_value < goal.target_value}
+                  className="min-w-0"
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-2 shrink-0" />
+                  <span className="truncate">Завершить</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setEditDialogOpen(true)}
+                  className="min-w-0"
+                >
+                  <Edit className="w-4 h-4 mr-2 shrink-0" />
+                  <span className="truncate">Редактировать</span>
+                </Button>
+              </div>
+
+              {/* Кнопки Закрыть и Удалить */}
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => setPauseDialogOpen(true)}
+                  className="min-w-0"
+                  disabled={goal.status === "paused" || goal.status === "completed"}
+                >
+                  <Pause className="w-4 h-4 mr-2 shrink-0" />
+                  <span className="truncate">Закрыть</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteDialogOpen(true)}
+                  className="min-w-0 text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4 mr-2 shrink-0" />
+                  <span className="truncate">Удалить</span>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Диалог удаления */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить цель?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Вы уверены, что хотите удалить цель "{goal.title}"? Это действие нельзя отменить.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive">
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Диалог завершения */}
+      <AlertDialog open={completeDialogOpen} onOpenChange={setCompleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Завершить цель?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Вы уверены, что хотите отметить цель "{goal.title}" как завершенную?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleComplete}>
+              Завершить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Диалог паузы */}
+      <AlertDialog open={pauseDialogOpen} onOpenChange={setPauseDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Приостановить цель?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Вы уверены, что хотите приостановить цель "{goal.title}"? Вы сможете возобновить её позже.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handlePause}>
+              Приостановить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Диалог редактирования */}
+      <AlertDialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Редактирование цели</AlertDialogTitle>
+            <AlertDialogDescription>
+              Функция редактирования цели находится в разработке. Пока вы можете удалить и создать новую цель.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setEditDialogOpen(false)}>Понятно</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+

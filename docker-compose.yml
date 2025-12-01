@@ -1,0 +1,63 @@
+# ===========================================
+# Namaz2911 - Docker Compose
+# ===========================================
+# Запуск: docker-compose up -d
+# Остановка: docker-compose down
+# Логи: docker-compose logs -f
+# ===========================================
+
+version: '3.8'
+
+services:
+  # Frontend приложение
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_SUPABASE_URL=${VITE_SUPABASE_URL:-https://fvxkywczuqincnjilgzd.supabase.co}
+        - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://bot.e-replika.ru/api}
+    ports:
+      - "${PORT:-3000}:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    environment:
+      - NODE_ENV=production
+    networks:
+      - namaz-network
+
+  # Опционально: PostgreSQL для локальной разработки
+  # Раскомментируйте если нужна локальная БД вместо Supabase
+  # postgres:
+  #   image: postgres:15-alpine
+  #   environment:
+  #     POSTGRES_DB: namaz
+  #     POSTGRES_USER: ${POSTGRES_USER:-namaz}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-namaz123}
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #     - ./supabase/migrations:/docker-entrypoint-initdb.d:ro
+  #   ports:
+  #     - "5432:5432"
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-namaz}"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   networks:
+  #     - namaz-network
+
+networks:
+  namaz-network:
+    driver: bridge
+
+# volumes:
+#   postgres_data:
+

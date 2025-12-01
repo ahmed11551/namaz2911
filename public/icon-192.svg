@@ -1,0 +1,86 @@
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Градиент для фона -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#059669;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#047857;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Градиент для купола -->
+    <linearGradient id="domeGrad" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F3F4F6;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Тень -->
+    <filter id="shadow192" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+      <feOffset dx="0" dy="3" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- Свечение -->
+    <filter id="glow192">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Фон -->
+  <rect width="192" height="192" rx="38" fill="url(#bgGrad)"/>
+  
+  <!-- Тень -->
+  <ellipse cx="96" cy="160" rx="56" ry="12" fill="#000000" opacity="0.2"/>
+  
+  <!-- Основание -->
+  <rect x="48" y="112" width="96" height="32" rx="3" fill="white" opacity="0.95"/>
+  
+  <!-- Центральная арка -->
+  <path d="M 72 112 Q 96 80 120 112" stroke="white" stroke-width="5" fill="none" opacity="0.9"/>
+  <rect x="72" y="112" width="48" height="32" fill="white" opacity="0.95"/>
+  
+  <!-- Боковые арки -->
+  <path d="M 56 120 Q 64 104 72 120" stroke="white" stroke-width="3" fill="none" opacity="0.8"/>
+  <path d="M 120 120 Q 128 104 136 120" stroke="white" stroke-width="3" fill="none" opacity="0.8"/>
+  
+  <!-- Купол -->
+  <ellipse cx="96" cy="80" rx="35" ry="29" fill="url(#domeGrad)" filter="url(#shadow192)"/>
+  <ellipse cx="96" cy="80" rx="32" ry="26" fill="none" stroke="white" stroke-width="2.5" opacity="0.6"/>
+  
+  <!-- Полумесяц -->
+  <path d="M 96 67 Q 88 64 80 67 Q 88 70 96 67" fill="#FCD34D" stroke="#F59E0B" stroke-width="1"/>
+  <circle cx="93" cy="66" r="2.5" fill="#FCD34D"/>
+  
+  <!-- Левый минарет -->
+  <rect x="40" y="64" width="10" height="56" rx="5" fill="white" opacity="0.95"/>
+  <rect x="42" y="64" width="6" height="40" rx="3" fill="url(#domeGrad)"/>
+  <circle cx="45" cy="61" r="5" fill="white" opacity="0.95"/>
+  <circle cx="45" cy="61" r="2.5" fill="#FCD34D"/>
+  
+  <!-- Правый минарет -->
+  <rect x="142" y="64" width="10" height="56" rx="5" fill="white" opacity="0.95"/>
+  <rect x="144" y="64" width="6" height="40" rx="3" fill="url(#domeGrad)"/>
+  <circle cx="147" cy="61" r="5" fill="white" opacity="0.95"/>
+  <circle cx="147" cy="61" r="2.5" fill="#FCD40D"/>
+  
+  <!-- Звёздочки -->
+  <g filter="url(#glow192)">
+    <path d="M 32 40 L 34 46 L 40 46 L 34.5 50 L 36 56 L 32 52 L 28 56 L 29.5 50 L 24 46 L 30 46 Z" fill="#FCD34D" opacity="0.9"/>
+    <path d="M 160 40 L 162 46 L 168 46 L 162.5 50 L 164 56 L 160 52 L 156 56 L 157.5 50 L 152 46 L 158 46 Z" fill="#FCD34D" opacity="0.9"/>
+  </g>
+  
+  <!-- Детали -->
+  <line x1="48" y1="128" x2="144" y2="128" stroke="white" stroke-width="1.5" opacity="0.3"/>
+  <line x1="72" y1="112" x2="72" y2="144" stroke="white" stroke-width="1.5" opacity="0.3"/>
+  <line x1="120" y1="112" x2="120" y2="144" stroke="white" stroke-width="1.5" opacity="0.3"/>
+</svg>
+
