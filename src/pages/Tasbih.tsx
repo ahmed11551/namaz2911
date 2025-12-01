@@ -10,7 +10,7 @@ const Tasbih = () => {
   const goalId = searchParams.get("goal") || undefined;
 
   return (
-    <div className="min-h-screen bg-background pb-28">
+    <div className="min-h-screen bg-gray-50 pb-28">
       <MainHeader />
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-lg">
         <EnhancedTasbih goalId={goalId} />

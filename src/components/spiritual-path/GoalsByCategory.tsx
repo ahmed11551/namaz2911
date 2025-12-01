@@ -302,7 +302,7 @@ export const GoalsByCategory = () => {
             ))}
           </div>
         ) : (
-          <Card className="bg-secondary/50">
+          <Card className="bg-gray-50 border-2 border-gray-200">
             <CardContent className="pt-6">
               <div className="text-center py-8">
                 <p className="text-muted-foreground mb-4">
@@ -377,7 +377,7 @@ export const GoalsByCategory = () => {
 
       {/* Блок незавершенных тасбих-сессий */}
       {pendingTasbih.length > 0 && (
-        <Card className="bg-gradient-card border-border/50 mb-4 rounded-xl">
+        <Card className="bg-white border-2 border-gray-200 mb-4 rounded-xl">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
               <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
@@ -392,7 +392,7 @@ export const GoalsByCategory = () => {
               return (
                 <div
                   key={entry.id}
-                  className="rounded-xl border border-primary/20 bg-background/80 p-3 sm:p-4 space-y-2"
+                  className="rounded-xl border-2 border-gray-200 bg-white p-3 sm:p-4 space-y-2"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex-1 min-w-0">
@@ -509,7 +509,7 @@ export const GoalsByCategory = () => {
 
       {/* Пустое состояние */}
       {goals.length === 0 && (
-        <Card className="bg-gradient-card border-border/50 rounded-xl">
+        <Card className="bg-white border-2 border-gray-200 rounded-xl">
           <CardContent className="pt-6">
             <div className="text-center py-6 sm:py-8">
               <Target className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 text-muted-foreground opacity-50" />

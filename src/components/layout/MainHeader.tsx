@@ -36,7 +36,7 @@ export const MainHeader = () => {
 
   return (
     <header className={cn(
-      "sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 transition-all duration-500",
+      "sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b-2 border-gray-200 transition-all duration-500",
       isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
     )}>
       <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-5 max-w-lg">
@@ -86,7 +86,7 @@ export const MainHeader = () => {
                 hapticFeedback.light();
                 navigate('/profile');
               }}
-              className="w-12 h-12 rounded-xl bg-card hover:bg-secondary flex items-center justify-center transition-all relative group interactive haptic-light"
+              className="w-12 h-12 rounded-xl bg-white border-2 border-gray-200 hover:bg-gray-50 flex items-center justify-center transition-all relative group interactive haptic-light"
               aria-label="Уведомления"
             >
               <Bell className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors" />

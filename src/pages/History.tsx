@@ -203,7 +203,7 @@ const History = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background pb-28">
+      <div className="min-h-screen bg-gray-50 pb-28">
         <MainHeader />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="animate-pulse text-muted-foreground">Загрузка...</div>

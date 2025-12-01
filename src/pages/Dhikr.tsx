@@ -34,7 +34,7 @@ const Dhikr = () => {
   }, [activeTab]);
 
   return (
-    <div className="min-h-screen bg-background pb-28">
+    <div className="min-h-screen bg-gray-50 pb-28">
       <MainHeader />
 
       <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-lg">

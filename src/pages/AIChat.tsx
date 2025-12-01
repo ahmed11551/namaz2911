@@ -199,7 +199,7 @@ const AIChat = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
       <MainHeader />
 
       {/* Chat Header */}

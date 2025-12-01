@@ -19,7 +19,7 @@ export const HabitCard = ({ habit, onAdd, onInfo }: HabitCardProps) => {
   const categoryColor = getCategoryColor(habit.category);
 
   return (
-    <Card className="group hover:shadow-md transition-all duration-200 border-border/50 hover:border-primary/30 relative overflow-hidden">
+    <Card className="group hover:shadow-md transition-all duration-200 border-2 border-gray-200 hover:border-green-300 bg-white relative overflow-hidden">
       {/* Цветовой маркер слева */}
       <div className={cn(
         "absolute left-0 top-0 bottom-0 w-1",

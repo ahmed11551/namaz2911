@@ -98,24 +98,24 @@ const GoalCard = memo(({
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3 flex-1 min-w-0">
             {/* Иконка категории */}
-            <div className={cn(
+      <div className={cn(
               "w-12 h-12 rounded-lg flex items-center justify-center text-2xl flex-shrink-0",
               isComplete ? "bg-green-100" : "bg-white"
-            )}>
+      )}>
               {getCategoryIcon(goal.category)}
-            </div>
-            
+      </div>
+
             {/* Контент */}
-            <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2">
                 <h3 className="font-semibold text-base text-gray-900 truncate">
-                  {goal.title}
-                </h3>
-                {isComplete && (
+            {goal.title}
+          </h3>
+          {isComplete && (
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-                )}
-              </div>
-              
+          )}
+        </div>
+        
               {/* Прогресс */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-sm">
@@ -128,30 +128,30 @@ const GoalCard = memo(({
                 </div>
                 <Progress 
                   value={progress} 
-                  className={cn(
+              className={cn(
                     "h-2",
                     isComplete ? "bg-green-200" : ""
                   )}
-                />
-              </div>
-            </div>
+            />
           </div>
+        </div>
+      </div>
 
           {/* Кнопка быстрого добавления */}
           {!isComplete && (
-            <button
-              onClick={handleQuickAdd}
-              className={cn(
+          <button
+            onClick={handleQuickAdd}
+            className={cn(
                 "w-10 h-10 rounded-lg flex items-center justify-center",
                 "bg-white border-2 border-gray-200 hover:border-gray-300",
                 "transition-all active:scale-95 flex-shrink-0"
-              )}
-              title="Добавить +1"
-            >
+            )}
+            title="Добавить +1"
+          >
               <Plus className="w-5 h-5 text-gray-700" />
-            </button>
-          )}
-        </div>
+          </button>
+        )}
+      </div>
       </CardContent>
     </Card>
   );
@@ -246,8 +246,8 @@ const Goals = () => {
 
   // Обработчики
   const handleGoalClick = useCallback((goal: Goal) => {
-    setSelectedGoal(goal);
-    setGoalDetailOpen(true);
+      setSelectedGoal(goal);
+      setGoalDetailOpen(true);
   }, []);
 
   const handleQuickAdd = useCallback(async (goal: Goal) => {
@@ -323,14 +323,14 @@ const Goals = () => {
               {activeGoals > 0 ? `${activeGoals} активных` : "Создайте первую цель"}
             </p>
           </div>
-          <Button
-            onClick={() => setCreateDialogOpen(true)}
-            size="sm"
-            className="bg-gray-900 hover:bg-gray-800 text-white"
-          >
+            <Button
+              onClick={() => setCreateDialogOpen(true)}
+              size="sm"
+            className="bg-green-600 hover:bg-green-700 text-white"
+            >
             <Plus className="w-4 h-4 mr-1" />
             Добавить
-          </Button>
+            </Button>
         </div>
 
         {/* Простая статистика */}
@@ -402,7 +402,7 @@ const Goals = () => {
                   onQuickAdd={() => handleQuickAdd(goal)}
                 />
               ))}
-          </div>
+        </div>
         ) : (
           <Card className="border-2 border-gray-200 bg-white">
             <CardContent className="p-12 text-center">
@@ -415,7 +415,7 @@ const Goals = () => {
               </p>
               <Button
                 onClick={() => setCreateDialogOpen(true)}
-                className="bg-gray-900 hover:bg-gray-800 text-white"
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Создать цель

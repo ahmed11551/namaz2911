@@ -41,7 +41,7 @@ export const BottomNav = () => {
       isVisible ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
     )}>
       {/* Glass background with blur */}
-      <div className="absolute inset-0 bg-card/90 backdrop-blur-xl border-t border-border/50" />
+      <div className="absolute inset-0 bg-white/95 backdrop-blur-xl border-t-2 border-gray-200" />
       
       <div className="relative container mx-auto px-3 max-w-lg">
         <div className="flex justify-around items-center h-24 py-3">

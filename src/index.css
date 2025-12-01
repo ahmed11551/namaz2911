@@ -6,68 +6,68 @@
 
 @layer base {
   :root {
-    /* Dark Theme by Default - Fintrack Style */
-    --background: 220 15% 8%;
-    --foreground: 0 0% 98%;
+    /* Light Theme by Default - Qaza Tracker Style */
+    --background: 0 0% 98%;
+    --foreground: 220 15% 10%;
 
-    --card: 220 15% 11%;
-    --card-foreground: 0 0% 98%;
-    --card-elevated: 220 15% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 10%;
+    --card-elevated: 0 0% 100%;
 
-    --popover: 220 15% 11%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 10%;
 
-    /* Primary - Vibrant Green (Fintrack accent) */
-    --primary: 152 75% 50%;
-    --primary-foreground: 220 15% 8%;
-    --primary-glow: 152 80% 55%;
-    --primary-light: 152 70% 70%;
-    --primary-dark: 152 80% 35%;
-    --primary-muted: 152 50% 20%;
+    /* Primary - Green (Qaza Tracker accent) */
+    --primary: 152 70% 40%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 152 75% 50%;
+    --primary-light: 152 65% 90%;
+    --primary-dark: 152 75% 30%;
+    --primary-muted: 152 40% 90%;
 
-    /* Secondary - Subtle dark */
-    --secondary: 220 15% 16%;
-    --secondary-foreground: 0 0% 90%;
+    /* Secondary - Light gray */
+    --secondary: 220 15% 95%;
+    --secondary-foreground: 220 15% 20%;
 
-    /* Muted - улучшенная контрастность */
-    --muted: 220 15% 18%;
-    --muted-foreground: 220 10% 65%;
+    /* Muted - Light gray */
+    --muted: 220 15% 95%;
+    --muted-foreground: 220 10% 45%;
 
-    /* Accent - Gold/Orange for highlights */
+    /* Accent - Orange for highlights */
     --accent: 38 95% 55%;
-    --accent-foreground: 220 15% 8%;
-    --accent-light: 38 95% 70%;
+    --accent-foreground: 0 0% 100%;
+    --accent-light: 38 95% 90%;
     --accent-dark: 38 95% 40%;
 
-    /* Prayer Time Colors - Vibrant for dark theme */
-    --prayer-fajr: 200 85% 55%;
-    --prayer-dhuhr: 45 95% 55%;
-    --prayer-asr: 25 90% 55%;
-    --prayer-maghrib: 350 85% 55%;
-    --prayer-isha: 260 70% 55%;
-    --prayer-witr: 280 65% 55%;
+    /* Prayer Time Colors - Vibrant for light theme */
+    --prayer-fajr: 200 85% 45%;
+    --prayer-dhuhr: 45 95% 45%;
+    --prayer-asr: 25 90% 45%;
+    --prayer-maghrib: 350 85% 45%;
+    --prayer-isha: 260 70% 45%;
+    --prayer-witr: 280 65% 45%;
 
     /* Category Colors */
-    --category-sleep: 260 60% 55%;
-    --category-prayer: 152 75% 50%;
-    --category-morning: 45 90% 55%;
-    --category-evening: 25 85% 55%;
-    --category-hajj: 350 80% 55%;
-    --category-general: 152 60% 50%;
+    --category-sleep: 260 60% 45%;
+    --category-prayer: 152 70% 40%;
+    --category-morning: 45 90% 45%;
+    --category-evening: 25 85% 45%;
+    --category-hajj: 350 80% 45%;
+    --category-general: 152 60% 40%;
 
     --destructive: 0 85% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 15% 20%;
-    --input: 220 15% 16%;
-    --ring: 152 75% 50%;
+    --border: 220 15% 90%;
+    --input: 220 15% 95%;
+    --ring: 152 70% 40%;
 
-    --radius: 1rem;
+    --radius: 0.75rem;
 
-    /* Fintrack-style Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(152 75% 45%) 0%, hsl(152 80% 60%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(220 15% 12%) 0%, hsl(220 15% 18%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(220 15% 13%) 0%, hsl(220 15% 10%) 100%);
+    /* Simple Gradients - Light theme */
+    --gradient-primary: linear-gradient(135deg, hsl(152 70% 35%) 0%, hsl(152 75% 50%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(220 15% 95%) 0%, hsl(220 15% 98%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(220 15% 98%) 100%);
     --gradient-hero: radial-gradient(ellipse at 20% 0%, hsl(152 75% 50% / 0.15) 0%, transparent 50%),
                      radial-gradient(ellipse at 80% 100%, hsl(260 60% 50% / 0.1) 0%, transparent 50%),
                      linear-gradient(180deg, hsl(220 15% 8%) 0%, hsl(220 15% 6%) 100%);
@@ -253,7 +253,7 @@
     position: relative;
     /* Улучшенный padding для безопасных зон */
     padding-bottom: env(safe-area-inset-bottom);
-    /* Принудительно тёмный фон */
+    /* Светлый фон */
     background-color: hsl(var(--background));
   }
 
@@ -263,7 +263,7 @@
     position: relative;
     min-height: 100vh;
     min-height: -webkit-fill-available; /* iOS Safari */
-    /* Принудительно тёмный фон */
+    /* Светлый фон */
     background-color: hsl(var(--background));
   }
 

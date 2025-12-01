@@ -165,7 +165,7 @@ export default function SpiritualPath() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-hero pb-20 sm:pb-0">
+    <div className="min-h-screen bg-gray-50 pb-20 sm:pb-0">
       <MainHeader />
       
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl pb-24 sm:pb-6 w-full overflow-x-hidden">

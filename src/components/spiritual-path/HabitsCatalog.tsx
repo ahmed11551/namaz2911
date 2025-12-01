@@ -74,7 +74,7 @@ export const HabitsCatalog = ({ onAddHabit, onCreateCustom }: HabitsCatalogProps
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 bg-white rounded-xl p-4 border-2 border-gray-200">
       {/* Заголовок и поиск */}
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2">
