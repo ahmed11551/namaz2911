@@ -19,8 +19,19 @@ export const HabitCard = ({ habit, onAdd, onInfo }: HabitCardProps) => {
   const categoryColor = getCategoryColor(habit.category);
 
   return (
-    <Card className="group hover:shadow-md transition-all duration-200 border-border/50 hover:border-primary/30">
-      <CardContent className="p-4">
+    <Card className="group hover:shadow-md transition-all duration-200 border-border/50 hover:border-primary/30 relative overflow-hidden">
+      {/* Цветовой маркер слева */}
+      <div className={cn(
+        "absolute left-0 top-0 bottom-0 w-1",
+        categoryColor === "green" && "bg-green-500",
+        categoryColor === "blue" && "bg-blue-500",
+        categoryColor === "purple" && "bg-purple-500",
+        categoryColor === "pink" && "bg-pink-500",
+        categoryColor === "amber" && "bg-amber-500",
+        categoryColor === "cyan" && "bg-cyan-500",
+        categoryColor === "rose" && "bg-rose-500"
+      )} />
+      <CardContent className="p-4 pl-5">
         <div className="flex items-start gap-3">
           {/* Иконка и цветовой маркер */}
           <div className={cn(
@@ -54,12 +65,18 @@ export const HabitCard = ({ habit, onAdd, onInfo }: HabitCardProps) => {
               <Badge
                 variant="outline"
                 className={cn(
-                  "text-xs",
+                  "text-xs flex items-center gap-1",
                   difficultyColor === "green" && "border-green-500/30 text-green-600",
                   difficultyColor === "yellow" && "border-yellow-500/30 text-yellow-600",
                   difficultyColor === "blue" && "border-blue-500/30 text-blue-600"
                 )}
               >
+                <span className={cn(
+                  "w-2 h-2 rounded-full",
+                  difficultyColor === "green" && "bg-green-500",
+                  difficultyColor === "yellow" && "bg-yellow-500",
+                  difficultyColor === "blue" && "bg-blue-500"
+                )} />
                 {getDifficultyLabel(habit.difficulty)}
               </Badge>
               {habit.defaultPeriod && (

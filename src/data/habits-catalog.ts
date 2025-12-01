@@ -2,7 +2,7 @@
 
 export type HabitDifficulty = "easy" | "medium" | "advanced";
 export type HabitCategory = "prayer" | "quran" | "zikr" | "sadaqa" | "knowledge" | "fasting" | "etiquette";
-export type HabitFilter = "all" | "recommended" | "daily" | "ramadan" | "good_deeds" | "learning" | HabitCategory;
+export type HabitFilter = "all" | "recommended" | "daily" | "ramadan" | "good_deeds" | "learning" | "beginners" | "women" | "youth" | HabitCategory;
 
 export interface Habit {
   id: string;
@@ -17,7 +17,7 @@ export interface Habit {
   benefit?: string;
   defaultTarget?: number;
   defaultPeriod?: "daily" | "weekly" | "monthly";
-  linkedCounterType?: string; // Для интеграции с тасбихом
+  linkedCounterType?: string | null; // Для интеграции с тасбихом
   tags: string[];
   recommendedFor?: string[]; // "beginners", "women", "youth", etc.
 }
@@ -485,6 +485,21 @@ export const HABITS_CATALOG: Habit[] = [
     tags: ["садака", "прибыль", "благодарность"],
     recommendedFor: ["daily"],
   },
+  {
+    id: "sadaqa-subscription",
+    title: "Участвовать в садака-подписке",
+    description: "Автоматические пожертвования через MubarakWay для постоянного блага",
+    category: "sadaqa",
+    subcategory: "ongoing",
+    difficulty: "easy",
+    icon: "🔄",
+    color: "pink",
+    benefit: "Постоянная садака без необходимости помнить каждый раз",
+    defaultTarget: 1,
+    defaultPeriod: "monthly",
+    tags: ["садака", "подписка", "автоматически"],
+    recommendedFor: ["beginners", "daily"],
+  },
 
   // 📚 Знания и саморазвитие
   {
@@ -764,7 +779,11 @@ export const getHabitsByCategory = (category: HabitCategory): Habit[] => {
 export const getHabitsByFilter = (filter: HabitFilter): Habit[] => {
   if (filter === "all") return HABITS_CATALOG;
   if (filter === "recommended") {
-    return HABITS_CATALOG.filter(h => h.recommendedFor?.includes("beginners") || h.tags.includes("рекомендуем"));
+    return HABITS_CATALOG.filter(h => 
+      h.recommendedFor?.includes("beginners") || 
+      h.tags.includes("рекомендуем") ||
+      h.difficulty === "easy"
+    );
   }
   if (filter === "daily") {
     return HABITS_CATALOG.filter(h => h.defaultPeriod === "daily" || h.tags.includes("ежедневно"));
@@ -779,6 +798,22 @@ export const getHabitsByFilter = (filter: HabitFilter): Habit[] => {
     return HABITS_CATALOG.filter(h => h.category === "knowledge" || h.tags.includes("обучение"));
   }
   return getHabitsByCategory(filter as HabitCategory);
+};
+
+// Дополнительные фильтры
+export const getHabitsForBeginners = (): Habit[] => {
+  return HABITS_CATALOG.filter(h => 
+    h.recommendedFor?.includes("beginners") || 
+    h.difficulty === "easy"
+  );
+};
+
+export const getHabitsForWomen = (): Habit[] => {
+  return HABITS_CATALOG.filter(h => h.recommendedFor?.includes("women"));
+};
+
+export const getHabitsForYouth = (): Habit[] => {
+  return HABITS_CATALOG.filter(h => h.recommendedFor?.includes("youth"));
 };
 
 export const searchHabits = (query: string): Habit[] => {

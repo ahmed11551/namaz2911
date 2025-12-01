@@ -63,12 +63,18 @@ export const HabitDetailsDialog = ({
             <Badge
               variant="outline"
               className={cn(
-                "text-xs",
+                "text-xs flex items-center gap-1.5",
                 difficultyColor === "green" && "border-green-500/30 text-green-600",
                 difficultyColor === "yellow" && "border-yellow-500/30 text-yellow-600",
                 difficultyColor === "blue" && "border-blue-500/30 text-blue-600"
               )}
             >
+              <span className={cn(
+                "w-2.5 h-2.5 rounded-full",
+                difficultyColor === "green" && "bg-green-500",
+                difficultyColor === "yellow" && "bg-yellow-500",
+                difficultyColor === "blue" && "bg-blue-500"
+              )} />
               {getDifficultyLabel(habit.difficulty)}
             </Badge>
             {habit.defaultPeriod && (
@@ -90,25 +96,25 @@ export const HabitDetailsDialog = ({
 
           {/* Польза и хадис */}
           {habit.benefit && (
-            <div className="bg-primary/5 rounded-lg p-3 space-y-2">
+            <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-4 space-y-2 border border-primary/20">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <h4 className="font-semibold text-sm">Польза</h4>
+                <Sparkles className="w-5 h-5 text-primary" />
+                <h4 className="font-semibold text-sm text-foreground">Польза</h4>
               </div>
-              <p className="text-xs sm:text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-foreground leading-relaxed">
                 {habit.benefit}
               </p>
             </div>
           )}
 
           {habit.hadith && (
-            <div className="bg-amber-500/5 rounded-lg p-3 space-y-2">
+            <div className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 rounded-xl p-4 space-y-2 border border-amber-500/20">
               <div className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-amber-600" />
-                <h4 className="font-semibold text-sm">Хадис</h4>
+                <BookOpen className="w-5 h-5 text-amber-600" />
+                <h4 className="font-semibold text-sm text-foreground">Хадис</h4>
               </div>
-              <p className="text-xs sm:text-sm text-muted-foreground italic">
-                {habit.hadith}
+              <p className="text-xs sm:text-sm text-muted-foreground italic leading-relaxed">
+                "{habit.hadith}"
               </p>
             </div>
           )}

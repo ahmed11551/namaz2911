@@ -40,6 +40,9 @@ export type LinkedCounterType =
   | "tahmid" // Тахмид (Альхамдулиллах)
   | "takbir" // Такбир (Аллаху Акбар)
   | "names_of_allah" // 99 имен Аллаха
+  | "after_prayer" // Зикр после намаза
+  | "istighfar" // Истигфар
+  | "tahlil" // Тахлиль (Ля иляха илля Ллах)
   | null;
 
 export type KnowledgeSubcategory = 
